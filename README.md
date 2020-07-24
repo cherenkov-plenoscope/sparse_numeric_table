@@ -1,12 +1,33 @@
-Sparse-Table
-============
+Sparse-Numeric-Table
+====================
 
-Read, write, and query sparse tables.
+Query, write, and read sparse, numeric tables.
+
+I often use ```pandas.DataFrame``` and ```numpy.recarray``` , but for sparse tables it does not work for me.
+Here, I represent sparse numeric tables as a ```dict``` full of ```numpy.recarray```s.
+Writing and reading is done with ```tarfiles``` so that the sparse table's hirachy is represented in the tapearchives file-system.
+The queries are done internally using the powerful ```pandas.merge```.
 
 Restictions
 -----------
-- only numerical fields
-- index must be unsigned integer
+- Only numerical fields
+- Index must be unsigned integer
+- Column-names must not have ```;``` character in it.
+
+Pro
+---
+- Fast input/output with ```numpy``` binaries. 
+- no custom ```class```, just a combination of ```dict``` and ```numpy.recarray```.
+- Easy to explore hirachy and structure in output-files due to file-system in tapearchive.
+
+Issues
+------
+- only supports queries common in my workflow
+- Unneccessary strong restrictions on column-names
+
+Usage
+-----
+
 
 
 ```

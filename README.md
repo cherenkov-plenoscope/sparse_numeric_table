@@ -30,28 +30,48 @@ Usage
 See also ```./sparse_numeric_tables/tests```.
 
 1st) You create a ```dict``` representing the structure and ```dtype``` of your table.
+Columns which only appear together are bundeled into a ```level```. Each ```level``` has an index to merge and join with other ```level```s.
+
+```python
+my_table_structure = {
+    "A": {
+        "a": {"dtype": "<u8"},
+        "b": {"dtype": "<f8"},
+        "c": {"dtype": "<f4"},
+    },
+    "B": {
+        "g": {"dtype": "<i8"},
+    },
+    "C": {
+        "m": {"dtype": "<i2"},
+        "n": {"dtype": "<u8", "comment": "Some comment related to 'n'."},
+    },
+}
+```
+Here ```A```, ```B```, and ```C``` are the ```level```-keys. ```a, ... , n``` are the column-keys.
+You can add comments for yourself, but ```sparse_numeric_table``` will ignore these.
 
 2nd) You create/read/write the table.
 
 
 ```
-        level 1          level 2       level 2
+        level A          level B       level C
           columns          columns       columns
-     idx a b c d e f  idx g h i j k l  idx m n o p
+     idx a b c d e f  idx g h i j k l  idx m n
      ___ _ _ _ _ _ _  ___ _ _ _ _ _ _
     |_0_|_|_|_|_|_|_||_0_|_|_|_|_|_|_|
     |_1_|_|_|_|_|_|_|
     |_2_|_|_|_|_|_|_| ___ _ _ _ _ _ _
     |_3_|_|_|_|_|_|_||_3_|_|_|_|_|_|_|
-    |_4_|_|_|_|_|_|_||_4_|_|_|_|_|_|_| ___ _ _ _ _
-    |_5_|_|_|_|_|_|_||_5_|_|_|_|_|_|_||_5_|_|_|_|_|
+    |_4_|_|_|_|_|_|_||_4_|_|_|_|_|_|_| ___ _ _
+    |_5_|_|_|_|_|_|_||_5_|_|_|_|_|_|_||_5_|_|_
     |_6_|_|_|_|_|_|_|
     |_7_|_|_|_|_|_|_|
     |_8_|_|_|_|_|_|_| ___ _ _ _ _ _ _
     |_9_|_|_|_|_|_|_||_9_|_|_|_|_|_|_|
     |10_|_|_|_|_|_|_||10_|_|_|_|_|_|_|
-    |11_|_|_|_|_|_|_| ___ _ _ _ _ _ _  ___ _ _ _ _
-    |12_|_|_|_|_|_|_||12_|_|_|_|_|_|_||12_|_|_|_|_|
+    |11_|_|_|_|_|_|_| ___ _ _ _ _ _ _  ___ _ _ 
+    |12_|_|_|_|_|_|_||12_|_|_|_|_|_|_||12_|_|_|
     |13_|_|_|_|_|_|_| ___ _ _ _ _ _ _
     |14_|_|_|_|_|_|_||14_|_|_|_|_|_|_|
 ```

@@ -5,7 +5,7 @@ Query, write, and read sparse, numeric tables.
 
 I often use ```pandas.DataFrame``` and ```numpy.recarray``` , but for sparse tables it does not work for me.
 Here, I represent sparse numeric tables as a ```dict``` full of ```numpy.recarray```s.
-Writing and reading is done with ```tarfiles``` so that the sparse table's hirachy is represented in the tapearchives file-system.
+Writing and reading is done with ```tarfile```s so that the sparse table's hirachy is represented in the tapearchives file-system.
 The queries are done internally using the powerful ```pandas.merge```.
 
 Restictions
@@ -27,7 +27,11 @@ Issues
 
 Usage
 -----
+See also ```./sparse_numeric_tables/tests```.
 
+1st) You create a ```dict``` representing the structure and ```dtype``` of your table.
+
+2nd) You create/read/write the table.
 
 
 ```

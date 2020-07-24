@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.org/cherenkov-plenoscope/sparse_numeric_table.svg?branch=master)](https://travis-ci.org/cherenkov-plenoscope/sparse_numeric_table)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+
 Sparse-Numeric-Table
 ====================
 
@@ -27,7 +31,7 @@ Issues
 
 Usage
 -----
-See also ```./sparse_numeric_tables/tests```.
+See also ```./sparse_numeric_table/tests```.
 
 1st) You create a ```dict``` representing the structure and ```dtype``` of your table.
 Columns which only appear together are bundeled into a ```level```. Each ```level``` has an index to merge and join with other ```level```s.

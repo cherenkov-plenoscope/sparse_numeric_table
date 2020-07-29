@@ -124,7 +124,7 @@ def test_from_records():
             if rnd() > 0.9:
                 table_records["C"].append({spt.IDX: i+3, "e": -rnd()})
 
-            table = spt.table_of_records_to_sparse_table(
+            table = spt.table_of_records_to_sparse_numeric_table(
                 table_records=table_records,
                 structure=structure)
 

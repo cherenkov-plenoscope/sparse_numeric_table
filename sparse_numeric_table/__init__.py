@@ -457,3 +457,11 @@ def table_of_records_to_sparse_numeric_table(table_records, structure):
             level_key=level_key,
             structure=structure)
     return table
+
+
+def get_column_as_dict_by_index(table, level_key, column_key):
+    level = table[level_key]
+    out = {}
+    for ii in range(level.shape[0]):
+        out[level[IDX][ii]] = level[column_key][ii]
+    return out

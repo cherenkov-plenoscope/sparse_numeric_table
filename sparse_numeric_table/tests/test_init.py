@@ -21,7 +21,7 @@ EXAMPLE_TABLE_STRUCTURE = {
 }
 
 
-def _make_example_table(size, start_index=0):
+def _make_example_table(prng, size, start_index=0):
     """
     Children start in elementary school. 10% progress to high school, and 10%
     of those progress to university.
@@ -29,12 +29,13 @@ def _make_example_table(size, start_index=0):
     columns, while every child is represented by a line.
     Unfortunately, a typical example of a sparse table.
     """
+
     t = {}
     t['elementary_school'] = spt.dict_to_recarray(
         {
             spt.IDX: start_index + np.arange(size).astype(spt.IDX_DTYPE),
-            'lunchpack_size': np.random.uniform(size=size).astype('<f8'),
-            'num_friends': np.random.uniform(
+            'lunchpack_size': prng.uniform(size=size).astype('<f8'),
+            'num_friends': prng.uniform(
                 low=0,
                 high=5,
                 size=size).astype('<i8'),
@@ -43,13 +44,13 @@ def _make_example_table(size, start_index=0):
     high_school_size = size//10
     t['high_school'] = spt.dict_to_recarray(
         {
-            spt.IDX: np.random.choice(
+            spt.IDX: prng.choice(
                 t['elementary_school'][spt.IDX],
                 size=high_school_size,
                 replace=False),
-            'time_spent_on_homework': 100 + 100*np.random.uniform(
+            'time_spent_on_homework': 100 + 100*prng.uniform(
                 size=high_school_size).astype('<f8'),
-            'num_best_friends': np.random.uniform(
+            'num_best_friends': prng.uniform(
                 low=0,
                 high=5,
                 size=high_school_size).astype('<i8'),
@@ -58,13 +59,13 @@ def _make_example_table(size, start_index=0):
     university_size = high_school_size//10
     t['university'] = spt.dict_to_recarray(
         {
-            spt.IDX: np.random.choice(
+            spt.IDX: prng.choice(
                 t['high_school'][spt.IDX],
                 size=university_size,
                 replace=False),
-            'num_missed_classes': 100*np.random.uniform(
+            'num_missed_classes': 100*prng.uniform(
                 size=university_size).astype('<i8'),
-            'num_fellow_students': np.random.uniform(
+            'num_fellow_students': prng.uniform(
                 low=0,
                 high=5,
                 size=university_size).astype('<i8'),
@@ -76,8 +77,8 @@ def _make_example_table(size, start_index=0):
 
 
 def test_from_records():
-    np.random.seed(0)
-    rnd = np.random.uniform
+    prng = np.random.Generator(np.random.MT19937(seed=0))
+    rnd = prng.uniform
 
     # define what your table will look like
     # -------------------------------------
@@ -144,8 +145,9 @@ def test_from_records():
 
 
 def test_write_read_full_table():
-    np.random.seed(1337)
-    my_table = _make_example_table(size=1000*1000)
+    prng = np.random.Generator(np.random.MT19937(seed=1337))
+
+    my_table = _make_example_table(prng=prng, size=1000*1000)
     with tempfile.TemporaryDirectory(prefix='test_sparse_table') as tmp:
         path = os.path.join(tmp, 'my_table.tar')
         spt.write(
@@ -159,8 +161,9 @@ def test_write_read_full_table():
 
 
 def test_write_read_empty_table():
-    np.random.seed(1337)
-    empty_table = _make_example_table(size=0)
+    prng = np.random.Generator(np.random.MT19937(seed=1337))
+
+    empty_table = _make_example_table(prng=prng, size=0)
     with tempfile.TemporaryDirectory(prefix='test_sparse_table') as tmp:
         path = os.path.join(tmp, 'my_empty_table.tar')
         spt.write(
@@ -174,8 +177,9 @@ def test_write_read_empty_table():
 
 
 def test_merge_common():
-    np.random.seed(1337)
-    my_table = _make_example_table(size=1000*1000)
+    prng = np.random.Generator(np.random.MT19937(seed=1337))
+
+    my_table = _make_example_table(prng=prng, size=1000*1000)
 
     common_indices = spt.find_common_indices(
         table=my_table,
@@ -210,9 +214,10 @@ def test_merge_common():
 
 
 def test_merge_across_all_levels_random_order_indices():
-    np.random.seed(1337)
+    prng = np.random.Generator(np.random.MT19937(seed=1337))
+
     size = 1000*1000
-    my_table = _make_example_table(size=size)
+    my_table = _make_example_table(prng=prng, size=size)
 
     has_elementary_school = my_table['elementary_school'][spt.IDX]
     has_high_school = my_table['high_school'][spt.IDX]
@@ -253,9 +258,10 @@ def test_merge_across_all_levels_random_order_indices():
 
 
 def test_merge_random_order_indices():
-    np.random.seed(1337)
+    prng = np.random.Generator(np.random.MT19937(seed=1337))
+
     size = 1000*1000
-    my_table = _make_example_table(size=size)
+    my_table = _make_example_table(prng=prng, size=size)
 
     has_elementary_school = my_table['elementary_school'][spt.IDX]
     has_high_school = my_table['high_school'][spt.IDX]
@@ -295,7 +301,8 @@ def test_merge_random_order_indices():
 
 
 def test_concatenate_several_tables():
-    np.random.seed(1337)
+    prng = np.random.Generator(np.random.MT19937(seed=1337))
+
     block_size = 10*1000
     num_blocks = 100
 
@@ -303,6 +310,7 @@ def test_concatenate_several_tables():
         paths = []
         for i in range(num_blocks):
             table_i = _make_example_table(
+                prng=prng,
                 size=block_size,
                 start_index=i*block_size)
             paths.append(os.path.join(tmp, "{:06d}.tar".format(i)))
@@ -348,7 +356,7 @@ def test_concatenate_empty_list_of_paths():
 
 
 def test_only_index_in_level():
-    np.random.seed(42)
+    prng = np.random.Generator(np.random.MT19937(seed=1337))
 
     structure = {
         "A": {"height": {"dtype": "<i8"}},
@@ -361,7 +369,7 @@ def test_only_index_in_level():
         "height": np.ones(10, dtype='<i8'),
     })
     table["B"] = spt.dict_to_recarray({
-        spt.IDX: np.random.choice(table["A"][spt.IDX], 5),
+        spt.IDX: prng.choice(table["A"][spt.IDX], 5),
     })
 
     spt.assert_table_has_structure(

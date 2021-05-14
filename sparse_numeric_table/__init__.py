@@ -186,6 +186,24 @@ def sort_table_on_common_indices(
     return out
 
 
+def cut_and_sort_table_on_indices(
+    table,
+    structure,
+    common_indices,
+    level_keys=None
+):
+    out = cut_table_on_indices(
+        table=table,
+        structure=structure,
+        common_indices=common_indices,
+        level_keys=level_keys,
+    )
+    out = sort_table_on_common_indices(
+        table=out, common_indices=common_indices
+    )
+    return out
+
+
 def make_mask_of_right_in_left(left_indices, right_indices):
     left_df = pd.DataFrame({IDX: left_indices})
     right_df = pd.DataFrame({IDX: right_indices})

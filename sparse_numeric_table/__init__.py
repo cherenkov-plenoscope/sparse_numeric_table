@@ -58,32 +58,32 @@ sparse tables
     Written to tape-archive
 
     table.tar
-        |_ level_1;idx
-        |_ level_1;column_a
-        |_ level_1;column_b
-        |_ level_1;column_c
-        |_ level_1;column_d
-        |_ level_1;column_e
-        |_ level_1;column_f
-        |_ level_2;idx
-        |_ level_2;column_g
-        |_ level_2;column_h
-        |_ level_2;column_i
-        |_ level_2;column_j
-        |_ level_2;column_k
-        |_ level_2;column_l
-        |_ level_3;idx
-        |_ level_3;column_m
-        |_ level_3;column_n
-        |_ level_3;column_o
-        |_ level_3;column_p
+        |_ level_1/idx
+        |_ level_1/column_a
+        |_ level_1/column_b
+        |_ level_1/column_c
+        |_ level_1/column_d
+        |_ level_1/column_e
+        |_ level_1/column_f
+        |_ level_2/idx
+        |_ level_2/column_g
+        |_ level_2/column_h
+        |_ level_2/column_i
+        |_ level_2/column_j
+        |_ level_2/column_k
+        |_ level_2/column_l
+        |_ level_3/idx
+        |_ level_3/column_m
+        |_ level_3/column_n
+        |_ level_3/column_o
+        |_ level_3/column_p
 """
 
 
 IDX = 'idx'
 IDX_DTYPE = '<u8'
 
-LEVEL_COLUMN_DELIMITER = ';'
+LEVEL_COLUMN_DELIMITER = '/'
 FILEAME_TEMPLATE = '{:s}'+LEVEL_COLUMN_DELIMITER+'{:s}.{:s}'
 
 DTYPES = [
@@ -417,6 +417,7 @@ def concatenate_files(
         for table_path in list_of_table_paths:
             _part_table = read(path=table_path, structure=structure)
             for level_key in tmp_paths:
+                os.makedirs(os.path.join(tmp, level_key), exist_ok=True)
                 for column_key in tmp_paths[level_key]:
                     with open(tmp_paths[level_key][column_key], "ab") as fa:
                         fa.write(_part_table[level_key][column_key].tobytes())

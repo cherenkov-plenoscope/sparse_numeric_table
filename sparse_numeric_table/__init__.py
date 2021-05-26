@@ -222,9 +222,11 @@ def make_rectangular_DataFrame(table):
                 else:
                     out[IDX] = table[level_key][IDX]
             else:
-                out["{:s}.{:s}".format(level_key, column_key)] = table[
-                    level_key
-                ][column_key]
+                out[
+                    "{:s}{:s}{:s}".format(
+                        level_key, LEVEL_COLUMN_DELIMITER, column_key
+                    )
+                ] = table[level_key][column_key]
     return pd.DataFrame(out)
 
 

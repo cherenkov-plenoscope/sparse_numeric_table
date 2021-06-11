@@ -111,9 +111,7 @@ def intersection(list_of_lists_of_indices):
     return inter
 
 
-def cut_level_on_indices(
-    table, level_key, indices, column_keys=None
-):
+def cut_level_on_indices(table, level_key, indices, column_keys=None):
     """
     Returns level 'level_key' of 'table' only containing 'indices' while
     having the same order as 'indices'.
@@ -148,9 +146,7 @@ def cut_table_on_indices(table, common_indices, level_keys=None):
     out = {}
     for level_key in level_keys:
         out[level_key] = cut_level_on_indices(
-            table=table,
-            level_key=level_key,
-            indices=common_indices,
+            table=table, level_key=level_key, indices=common_indices,
         )
     return out
 
@@ -174,13 +170,9 @@ def sort_table_on_common_indices(
     return out
 
 
-def cut_and_sort_table_on_indices(
-    table, common_indices, level_keys=None
-):
+def cut_and_sort_table_on_indices(table, common_indices, level_keys=None):
     out = cut_table_on_indices(
-        table=table,
-        common_indices=common_indices,
-        level_keys=level_keys,
+        table=table, common_indices=common_indices, level_keys=level_keys,
     )
     out = sort_table_on_common_indices(
         table=out, common_indices=common_indices
@@ -375,7 +367,9 @@ def write(path, table, structure=None):
                 dtype_key = table[level_key].dtype[column_key].str
                 _append_tar(
                     tarfout=tarfout,
-                    name=FILEAME_TEMPLATE.format(level_key, column_key, dtype_key),
+                    name=FILEAME_TEMPLATE.format(
+                        level_key, column_key, dtype_key
+                    ),
                     payload_bytes=table[level_key][column_key].tobytes(),
                 )
     shutil.move(path + ".tmp", path)
@@ -404,7 +398,8 @@ def read(path, structure=None):
     with tarfile.open(path, "r") as tarfin:
         for tarinfo in tarfin:
             level_key, column_key, dtype_key = _split_level_column_dtype(
-                path=tarinfo.name)
+                path=tarinfo.name
+            )
             if column_key == IDX:
                 assert dtype_key == IDX_DTYPE
             level_column_bytes = tarfin.extractfile(tarinfo).read()

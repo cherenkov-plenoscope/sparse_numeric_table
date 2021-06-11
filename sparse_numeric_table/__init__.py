@@ -104,17 +104,6 @@ DTYPES = [
 # ==================
 
 
-def find_common_indices(table, structure, level_keys=None):
-    if level_keys is None:
-        level_keys = list(structure.keys())
-    uids = table[level_keys[0]][IDX]
-    for lidx in np.arange(1, len(level_keys)):
-        level_key = level_keys[lidx]
-        _uids = table[level_key][IDX]
-        uids = np.intersect1d(uids, _uids)
-    return uids
-
-
 def intersection(list_of_lists_of_indices):
     inter = list_of_lists_of_indices[0]
     for i in range(len(list_of_lists_of_indices)):

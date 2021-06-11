@@ -181,9 +181,9 @@ def test_merge_common():
 
     my_table = _make_example_table(prng=prng, size=1000*1000)
 
-    common_indices = spt.find_common_indices(
-        table=my_table,
-        structure=EXAMPLE_TABLE_STRUCTURE)
+    common_indices = spt.intersection(
+        [my_table[lvl][spt.IDX] for lvl in my_table]
+    )
 
     my_common_table = spt.cut_table_on_indices(
         table=my_table,

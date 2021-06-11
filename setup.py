@@ -4,21 +4,16 @@ with open("README.md", "r") as f:
     long_description = f.read()
 
 setuptools.setup(
-    name='sparse_numeric_table',
-    version='0.0.2',
-    description='Read, write, and manipulate sparse tables',
+    name="sparse_numeric_table",
+    version="0.0.2",
+    description="Read, write, and manipulate sparse tables",
     long_description=long_description,
-    url='https://github.com/cherenkov-plenoscope',
-    author='Sebastian Achim Mueller',
-    author_email='sebastian-achim.mueller@mpi-hd.mpg.de',
-    license='mit',
-    packages=[
-        'sparse_numeric_table',
-    ],
-    install_requires=[
-       'numpy',
-       'pandas',
-    ],
+    url="https://github.com/cherenkov-plenoscope",
+    author="Sebastian Achim Mueller",
+    author_email="sebastian-achim.mueller@mpi-hd.mpg.de",
+    license="mit",
+    packages=["sparse_numeric_table",],
+    install_requires=["numpy", "pandas",],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

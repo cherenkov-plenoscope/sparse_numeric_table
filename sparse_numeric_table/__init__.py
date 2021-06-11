@@ -344,49 +344,80 @@ def _append_tar(tarfout, name, payload_bytes):
         tarfout.addfile(tarinfo=tarinfo, fileobj=fileobj)
 
 
-def write(path, table, structure):
-    assert_table_has_structure(table=table, structure=structure)
+def write(path, table, structure=None):
+    """
+    Writes the table to path.
+
+    parameters
+    ----------
+    path : string
+            Path to be written to.
+
+    table : dict of recarrays
+            The sparse table.
+
+    structure : dict (default: None)
+            The structure of the table. If provided it is asserted that the
+            table written has the provided structure.
+    """
+
+    if structure:
+        assert_table_has_structure(table=table, structure=structure)
+
     with tarfile.open(path + ".tmp", "w") as tarfout:
-        for level_key in structure:
+        for level_key in table:
             _append_tar(
                 tarfout=tarfout,
                 name=FILEAME_TEMPLATE.format(level_key, IDX, IDX_DTYPE),
                 payload_bytes=table[level_key][IDX].tobytes(),
             )
-            for column_key in structure[level_key]:
-                dtype = structure[level_key][column_key]["dtype"]
+            for column_key in table[level_key].dtype.names:
+                dtype_key = table[level_key].dtype[column_key].str
                 _append_tar(
                     tarfout=tarfout,
-                    name=FILEAME_TEMPLATE.format(level_key, column_key, dtype),
+                    name=FILEAME_TEMPLATE.format(level_key, column_key, dtype_key),
                     payload_bytes=table[level_key][column_key].tobytes(),
                 )
     shutil.move(path + ".tmp", path)
 
 
-def read(path, structure):
+def _split_level_column_dtype(path):
+    level_key, column_key_and_dtype = str.split(path, LEVEL_COLUMN_DELIMITER)
+    column_key, dtype_key = str.split(column_key_and_dtype, ".")
+    return level_key, column_key, dtype_key
+
+
+def read(path, structure=None):
     """
-    Returns table from path
+    Returns table which is read from path.
+
+    parameters
+    ----------
+    path : string
+            Path to tape-archive in filesystem
+
+    structure : dict (default: None)
+            The structure of the table. If provided it is asserted that the
+            table read has the provided structure.
     """
     out = {}
-    for level_key in structure:
-        out[level_key] = {}
     with tarfile.open(path, "r") as tarfin:
         for tarinfo in tarfin:
-            level_key, column_key_and_dtype = str.split(
-                tarinfo.name, LEVEL_COLUMN_DELIMITER
-            )
-            column_key, dtype = str.split(column_key_and_dtype, ".")
+            level_key, column_key, dtype_key = _split_level_column_dtype(
+                path=tarinfo.name)
             if column_key == IDX:
-                assert dtype == IDX_DTYPE
+                assert dtype_key == IDX_DTYPE
             level_column_bytes = tarfin.extractfile(tarinfo).read()
             if level_key not in out:
                 out[level_key] = {}
             out[level_key][column_key] = np.frombuffer(
-                level_column_bytes, dtype=dtype
+                level_column_bytes, dtype=dtype_key
             )
     for level_key in out:
         out[level_key] = dict_to_recarray(out[level_key])
-    assert_table_has_structure(table=out, structure=structure)
+
+    if structure:
+        assert_table_has_structure(table=out, structure=structure)
     return out
 
 

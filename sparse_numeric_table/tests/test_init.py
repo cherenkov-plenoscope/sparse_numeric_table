@@ -159,6 +159,15 @@ def test_write_read_full_table():
             structure=EXAMPLE_TABLE_STRUCTURE)
         spt.assert_tables_are_equal(my_table, my_table_back)
 
+        # no structure
+        path_nos = os.path.join(tmp, 'my_table_no_structure.tar')
+        spt.write(path=path_nos, table=my_table)
+        my_table_back_nos = spt.read(path=path_nos)
+        spt.assert_tables_are_equal(my_table, my_table_back_nos)
+        spt.assert_table_has_structure(
+            table=my_table_back_nos,
+            structure=EXAMPLE_TABLE_STRUCTURE)
+
 
 def test_write_read_empty_table():
     prng = np.random.Generator(np.random.MT19937(seed=1337))
@@ -174,6 +183,15 @@ def test_write_read_empty_table():
             path=path,
             structure=EXAMPLE_TABLE_STRUCTURE)
         spt.assert_tables_are_equal(empty_table, my_table_back)
+
+        # no structure
+        path_nos = os.path.join(tmp, 'my_empty_table_no_structure.tar')
+        spt.write(path=path_nos, table=empty_table)
+        my_table_back_nos = spt.read(path=path_nos)
+        spt.assert_tables_are_equal(empty_table, my_table_back_nos)
+        spt.assert_table_has_structure(
+            table=my_table_back_nos,
+            structure=EXAMPLE_TABLE_STRUCTURE)
 
 
 def test_merge_common():

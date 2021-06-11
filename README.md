@@ -7,31 +7,34 @@ Sparse-Numeric-Table
 
 Query, write, and read sparse, numeric tables.
 
-I often use ```pandas.DataFrame``` and ```numpy.recarray``` , but for sparse tables it does not work for me.
-Here, I represent sparse numeric tables as a ```dict``` full of ```numpy.recarray```s.
-Writing and reading is done with ```tarfile```s so that the sparse table's hirachy is represented in the tapearchives file-system.
-The queries are done internally using the powerful ```pandas.merge```.
+I love ```pandas.DataFrame``` and ```numpy.recarray```, but with large and sparse tables I run out of memory or fail to represent 'nan' in integer fields.
+
+Here I use a ```dict``` of ```numpy.recarray```s to represent large and sparse tables.
+Each ```recarray``` references the row's index.
+Writing into ```tarfile```s preserves the table's hirachy and makes it easy to explore in the file-system.
+The queries are done using the powerful ```pandas.merge```.
 
 Restictions
 -----------
-- Only numerical fields
-- Index must be unsigned integer
-- Column-names must not have ```;``` character in it.
+- Only numeric fields
+- Index is unsigned integer
 
-Pro
----
-- Fast input/output with ```numpy``` binaries. 
-- no custom ```class```, just a combination of ```dict``` and ```numpy.recarray```.
-- Easy to explore hirachy and structure in output-files due to file-system in tapearchive.
+Pros
+----
+- Fastest possible read/write with ```numpy``` binaries (explicit endianness).
+- Just a ```dict``` of ```numpy.recarray```s. No class.
+- Easy to explore files in the tapearchive.
 
-Issues
-------
-- only supports queries common in my workflow
-- Unneccessary strong restrictions on column-names
+Features
+--------
+- Create from 'records' (dict representing one row in the table)
+- Query, cut, and merge on row-indices (columns can be omitted for seed)
+- Read from / write to file.
+- Concate files.
 
 Usage
 -----
-See also ```./sparse_numeric_table/tests```.
+See ```./sparse_numeric_table/tests```.
 
 1st) You create a ```dict``` representing the structure and ```dtype``` of your table.
 Columns which only appear together are bundeled into a ```level```. Each ```level``` has an index to merge and join with other ```level```s.

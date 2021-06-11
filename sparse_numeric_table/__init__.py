@@ -112,7 +112,7 @@ def intersection(list_of_lists_of_indices):
 
 
 def cut_level_on_indices(
-    table, structure, level_key, indices, column_keys=None
+    table, level_key, indices, column_keys=None
 ):
     """
     Returns level 'level_key' of 'table' only containing 'indices' while
@@ -121,11 +121,11 @@ def cut_level_on_indices(
     indices                         Recarray, with indices
 
     column_keys                     A list of column_keys to be in the output
-                                    level. Uese all column_keys in structure
+                                    level. Uese all column_keys in table
                                     for column_keys == None.
     """
     if column_keys is None:
-        column_keys = list(structure[level_key].keys())
+        column_keys = list(table[level_key].dtype.names)
     column_keys.append(IDX)
     _part = {}
     for column_key in column_keys:
@@ -142,14 +142,13 @@ def cut_level_on_indices(
     return common_df.to_records(index=False)
 
 
-def cut_table_on_indices(table, structure, common_indices, level_keys=None):
+def cut_table_on_indices(table, common_indices, level_keys=None):
     if level_keys is None:
-        level_keys = list(structure.keys())
+        level_keys = list(table.keys())
     out = {}
     for level_key in level_keys:
         out[level_key] = cut_level_on_indices(
             table=table,
-            structure=structure,
             level_key=level_key,
             indices=common_indices,
         )
@@ -176,11 +175,10 @@ def sort_table_on_common_indices(
 
 
 def cut_and_sort_table_on_indices(
-    table, structure, common_indices, level_keys=None
+    table, common_indices, level_keys=None
 ):
     out = cut_table_on_indices(
         table=table,
-        structure=structure,
         common_indices=common_indices,
         level_keys=level_keys,
     )
@@ -367,7 +365,7 @@ def write(path, table, structure):
 
 def read(path, structure):
     """
-    Returns table and structure
+    Returns table from path
     """
     out = {}
     for level_key in structure:

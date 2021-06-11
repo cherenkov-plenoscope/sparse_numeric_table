@@ -187,7 +187,6 @@ def test_merge_common():
 
     my_common_table = spt.cut_table_on_indices(
         table=my_table,
-        structure=EXAMPLE_TABLE_STRUCTURE,
         common_indices=common_indices
     )
     my_sorted_common_table = spt.sort_table_on_common_indices(
@@ -235,7 +234,6 @@ def test_merge_across_all_levels_random_order_indices():
 
     cut_table = spt.cut_table_on_indices(
         table=my_table,
-        structure=EXAMPLE_TABLE_STRUCTURE,
         common_indices=cut_indices,
         level_keys=['elementary_school', 'high_school', 'university'])
     sorted_cut_table = spt.sort_table_on_common_indices(
@@ -277,7 +275,6 @@ def test_merge_random_order_indices():
 
     cut_table = spt.cut_table_on_indices(
         table=my_table,
-        structure=EXAMPLE_TABLE_STRUCTURE,
         common_indices=cut_indices,
         level_keys=['elementary_school', 'high_school']
     )

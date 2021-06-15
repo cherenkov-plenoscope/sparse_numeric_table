@@ -358,11 +358,7 @@ def write(path, table, structure=None):
 
     with tarfile.open(path + ".tmp", "w") as tarfout:
         for level_key in table:
-            _append_tar(
-                tarfout=tarfout,
-                name=FILEAME_TEMPLATE.format(level_key, IDX, IDX_DTYPE),
-                payload_bytes=table[level_key][IDX].tobytes(),
-            )
+            assert IDX in table[level_key].dtype.names
             for column_key in table[level_key].dtype.names:
                 dtype_key = table[level_key].dtype[column_key].str
                 _append_tar(

@@ -11,7 +11,6 @@ setuptools.setup(
     url="https://github.com/cherenkov-plenoscope",
     author="Sebastian Achim Mueller",
     author_email="sebastian-achim.mueller@mpi-hd.mpg.de",
-    license="mit",
     packages=["sparse_numeric_table",],
     install_requires=["numpy", "pandas",],
     classifiers=[

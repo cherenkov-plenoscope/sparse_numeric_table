@@ -1,12 +1,3 @@
-import pandas as pd
-import numpy as np
-import tarfile
-import io
-import shutil
-import tempfile
-import os
-
-
 """
 sparse tables
 =============
@@ -78,6 +69,13 @@ sparse tables
         |_ level_3/column_o
         |_ level_3/column_p
 """
+import pandas as pd
+import numpy as np
+import tarfile
+import io
+import shutil
+import tempfile
+import os
 
 
 IDX = "idx"

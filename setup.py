@@ -6,7 +6,7 @@ with open("README.md", "r") as f:
 setuptools.setup(
     name="sparse_numeric_table_relleums",
     version="0.0.3",
-    description="Read, write, and manipulate sparse tables",
+    description="Read, write, and query sparse tables",
     long_description=long_description,
     url="https://github.com/cherenkov-plenoscope",
     author="Sebastian Achim Mueller",

@@ -7,12 +7,10 @@ Sparse-Numeric-Table
 
 Query, write, and read sparse, numeric tables.
 
-I love ```pandas.DataFrame``` and ```numpy.recarray```, but with large and sparse tables I run out of memory or fail to represent 'nan' in integer fields.
+I love ```pandas.DataFrame``` and ```numpy.recarray```, but with large and sparse tables I run out of memory or struggle to represent empty integer fields with the float's ```NaN```.
 
 Here I use a ```dict``` of ```numpy.recarray```s to represent large and sparse tables.
-Each ```recarray``` references the row's index.
-Writing into ```tarfile```s preserves the table's hirachy and makes it easy to explore in the file-system.
-The queries are done using the powerful ```pandas.merge```.
+Writing into ```tarfile```s (```.tar```) preserves the table's hirachy and makes it easy to explore in the file-system. I use ```pandas.merge``` to query.
 
 Restictions
 -----------
@@ -21,16 +19,16 @@ Restictions
 
 Pros
 ----
-- Fastest possible read/write with ```numpy``` binaries (explicit endianness).
-- Just a ```dict``` of ```numpy.recarray```s. No class.
-- Easy to explore files in the tapearchive.
+- Fast read / write with ```numpy``` binaries (explicit endianness).
+- Just a ```dict``` of ```numpy.recarray```s. No classes. No stateful functions.
+- Easy to explore files in the tapearchive ```.tar```.
 
 Features
 --------
-- Create from 'records' (dict representing one row in the table)
-- Query, cut, and merge on row-indices (columns can be omitted for seed)
-- Read from / write to file.
-- Concate files.
+- Read from file / write to file.
+- Create from 'records' (A list of dicts, each representing one row in the table)
+- Query, cut, and merge on row-indices (columns can be omitted for speed)
+- Concatenate files.
 
 Usage
 -----

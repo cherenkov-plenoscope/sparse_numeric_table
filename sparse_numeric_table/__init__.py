@@ -4,7 +4,7 @@ sparse tables
 
     Might look like this:
 
-        level 1          level 2       level 2
+        level 1          level 2       level 3
           columns          columns       columns
      idx a b c d e f  idx g h i j k l  idx m n o p
      ___ _ _ _ _ _ _  ___ _ _ _ _ _ _
@@ -27,7 +27,7 @@ sparse tables
 
     Can be represented in memory like this:
 
-        level 1            level 2         level 2
+        level 1            level 2         level 3
           columns            columns         columns
      idx a b c d e f    idx g h i j k l    idx m n o p
      ___ _ _ _ _ _ _    ___ _ _ _ _ _ _    ___ _ _ _ _

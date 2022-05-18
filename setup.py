@@ -1,14 +1,15 @@
 import setuptools
 
-with open("README.md", "r") as f:
+with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 setuptools.setup(
     name="sparse_numeric_table_sebastian-achim-mueller",
-    version="0.0.4",
+    version="0.0.5",
     description="Read, write, and query sparse tables",
     long_description=long_description,
-    url="https://github.com/cherenkov-plenoscope",
+    long_description_content_type='text/markdown',
+    url="https://github.com/cherenkov-plenoscope/sparse_numeric_table",
     author="Sebastian Achim Mueller",
     author_email="sebastian-achim.mueller@mpi-hd.mpg.de",
     packages=["sparse_numeric_table",],

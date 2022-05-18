@@ -4,7 +4,7 @@ with open("README.md", "r") as f:
     long_description = f.read()
 
 setuptools.setup(
-    name="sparse_numeric_table_relleums",
+    name="sparse_numeric_table_sebastian-achim-mueller",
     version="0.0.4",
     description="Read, write, and query sparse tables",
     long_description=long_description,

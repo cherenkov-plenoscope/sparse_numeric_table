@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/cherenkov-plenoscope/sparse_numeric_table.svg?branch=master)](https://travis-ci.org/cherenkov-plenoscope/sparse_numeric_table)
+[![Build Status](https://travis-ci.com/cherenkov-plenoscope/sparse_numeric_table.svg?branch=master)](https://travis-ci.com/cherenkov-plenoscope/sparse_numeric_table)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 

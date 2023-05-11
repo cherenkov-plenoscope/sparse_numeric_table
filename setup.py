@@ -5,10 +5,10 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setuptools.setup(
     name="sparse_numeric_table_sebastian-achim-mueller",
-    version="0.0.6",
+    version="0.0.7",
     description="Read, write, and query sparse tables",
     long_description=long_description,
-    long_description_content_type='text/markdown',
+    long_description_content_type="text/markdown",
     url="https://github.com/cherenkov-plenoscope/sparse_numeric_table",
     author="Sebastian Achim Mueller",
     author_email="sebastian-achim.mueller@mpi-hd.mpg.de",

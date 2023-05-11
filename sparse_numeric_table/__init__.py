@@ -565,3 +565,17 @@ def get_column_as_dict_by_index(table, level_key, column_key):
     for ii in range(level.shape[0]):
         out[level[IDX][ii]] = level[column_key][ii]
     return out
+
+
+# print
+# =====
+
+
+def list_size(table):
+    out = io.StringIO()
+    for level_key in table:
+        out.write(
+            "{: 9d} {: <30s}\n".format(table[level_key].shape[0], level_key)
+        )
+    out.seek(0)
+    return out.read()

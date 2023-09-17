@@ -69,6 +69,7 @@ sparse tables
         |_ level_3/column_o
         |_ level_3/column_p
 """
+from .version import __version__
 import pandas as pd
 import numpy as np
 import tarfile
@@ -166,7 +167,8 @@ def cut_table_on_indices(table, common_indices, level_keys=None):
     out = {}
     for level_key in level_keys:
         out[level_key] = cut_level_on_indices(
-            level=table[level_key], indices=common_indices,
+            level=table[level_key],
+            indices=common_indices,
         )
     return out
 
@@ -211,7 +213,9 @@ def cut_and_sort_table_on_indices(table, common_indices, level_keys=None):
             When specified, only this levels will be in the output-table.
     """
     out = cut_table_on_indices(
-        table=table, common_indices=common_indices, level_keys=level_keys,
+        table=table,
+        common_indices=common_indices,
+        level_keys=level_keys,
     )
     out = sort_table_on_common_indices(
         table=out, common_indices=common_indices

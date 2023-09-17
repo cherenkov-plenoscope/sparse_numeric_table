@@ -80,20 +80,26 @@ def test_from_records():
     # define what your table will look like
     # -------------------------------------
     structure = {
-        "A": {"a": {"dtype": "<f8"}, "b": {"dtype": "<f8"},},
-        "B": {"c": {"dtype": "<f8"}, "d": {"dtype": "<f8"},},
-        "C": {"e": {"dtype": "<f8"},},
+        "A": {
+            "a": {"dtype": "<f8"},
+            "b": {"dtype": "<f8"},
+        },
+        "B": {
+            "c": {"dtype": "<f8"},
+            "d": {"dtype": "<f8"},
+        },
+        "C": {
+            "e": {"dtype": "<f8"},
+        },
     }
 
     # populate the table using records
     # --------------------------------
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
-
         num_jobs = 100
         n = 5
         job_result_paths = []
         for j in range(num_jobs):
-
             # map the population of the sparse table onto many jobs
             # -----------------------------------------------------
             i = j * n
@@ -317,7 +323,8 @@ def test_concatenate_several_tables():
             )
         output_path = os.path.join(tmp, "full.tar")
         full_table = spt.concatenate_files(
-            list_of_table_paths=paths, structure=EXAMPLE_TABLE_STRUCTURE,
+            list_of_table_paths=paths,
+            structure=EXAMPLE_TABLE_STRUCTURE,
         )
     spt.assert_table_has_structure(
         table=full_table, structure=EXAMPLE_TABLE_STRUCTURE
@@ -374,7 +381,9 @@ def test_only_index_in_level():
         }
     )
     table["B"] = spt.dict_to_recarray(
-        {spt.IDX: prng.choice(table["A"][spt.IDX], 5),}
+        {
+            spt.IDX: prng.choice(table["A"][spt.IDX], 5),
+        }
     )
 
     spt.assert_table_has_structure(table=table, structure=structure)

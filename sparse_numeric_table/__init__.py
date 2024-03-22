@@ -78,7 +78,7 @@ from .base import LEVEL_COLUMN_DELIMITER
 from .base import FILEAME_TEMPLATE
 from .base import DTYPES
 from .base import make_mask_of_right_in_left
-
+from .base import dict_to_recarray
 
 import pandas as pd
 import numpy as np
@@ -236,10 +236,6 @@ def make_rectangular_DataFrame(table):
                     )
                 ] = table[level_key][column_key]
     return pd.DataFrame(out)
-
-
-def dict_to_recarray(d):
-    return pd.DataFrame(d).to_records(index=False)
 
 
 # input output

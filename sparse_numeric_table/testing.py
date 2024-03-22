@@ -1,6 +1,7 @@
 from .base import IDX
 from .base import IDX_DTYPE
 from .base import DTYPES
+from .base import dict_to_recarray
 
 import numpy as np
 
@@ -111,3 +112,74 @@ def assert_structure_keys_are_valid(structure):
                     str(structure[level_key][column_key]["dtype"]),
                 )
             )
+
+
+def make_example_table_structure():
+    return {
+        "elementary_school": {
+            "lunchpack_size": {"dtype": "<f8"},
+            "num_friends": {"dtype": "<i8"},
+        },
+        "high_school": {
+            "time_spent_on_homework": {"dtype": "<f8"},
+            "num_best_friends": {"dtype": "<i8"},
+        },
+        "university": {
+            "num_missed_classes": {"dtype": "<i8"},
+            "num_fellow_students": {"dtype": "<i8"},
+        },
+    }
+
+
+def make_example_table(prng, size, start_index=0):
+    """
+    Children start in elementary school. 10% progress to high school, and 10%
+    of those progress to university.
+    At each point in their career statistics are collected that can be put to
+    columns, while every child is represented by a line.
+    Unfortunately, a typical example of a sparse table.
+    """
+
+    example_table_structure = make_example_table_structure()
+
+    t = {}
+    t["elementary_school"] = dict_to_recarray(
+        {
+            IDX: start_index + np.arange(size).astype(IDX_DTYPE),
+            "lunchpack_size": prng.uniform(size=size).astype("<f8"),
+            "num_friends": prng.uniform(low=0, high=5, size=size).astype(
+                "<i8"
+            ),
+        }
+    )
+    high_school_size = size // 10
+    t["high_school"] = dict_to_recarray(
+        {
+            IDX: prng.choice(
+                t["elementary_school"][IDX],
+                size=high_school_size,
+                replace=False,
+            ),
+            "time_spent_on_homework": 100
+            + 100 * prng.uniform(size=high_school_size).astype("<f8"),
+            "num_best_friends": prng.uniform(
+                low=0, high=5, size=high_school_size
+            ).astype("<i8"),
+        }
+    )
+    university_size = high_school_size // 10
+    t["university"] = dict_to_recarray(
+        {
+            IDX: prng.choice(
+                t["high_school"][IDX], size=university_size, replace=False
+            ),
+            "num_missed_classes": 100
+            * prng.uniform(size=university_size).astype("<i8"),
+            "num_fellow_students": prng.uniform(
+                low=0, high=5, size=university_size
+            ).astype("<i8"),
+        }
+    )
+    assert_structure_keys_are_valid(structure=example_table_structure)
+    assert_table_has_structure(table=t, structure=example_table_structure)
+    return t

@@ -5,78 +5,6 @@ import tempfile
 import os
 
 
-EXAMPLE_TABLE_STRUCTURE = {
-    "elementary_school": {
-        "lunchpack_size": {"dtype": "<f8"},
-        "num_friends": {"dtype": "<i8"},
-    },
-    "high_school": {
-        "time_spent_on_homework": {"dtype": "<f8"},
-        "num_best_friends": {"dtype": "<i8"},
-    },
-    "university": {
-        "num_missed_classes": {"dtype": "<i8"},
-        "num_fellow_students": {"dtype": "<i8"},
-    },
-}
-
-
-def _make_example_table(prng, size, start_index=0):
-    """
-    Children start in elementary school. 10% progress to high school, and 10%
-    of those progress to university.
-    At each point in their career statistics are collected that can be put to
-    columns, while every child is represented by a line.
-    Unfortunately, a typical example of a sparse table.
-    """
-
-    t = {}
-    t["elementary_school"] = spt.dict_to_recarray(
-        {
-            spt.IDX: start_index + np.arange(size).astype(spt.IDX_DTYPE),
-            "lunchpack_size": prng.uniform(size=size).astype("<f8"),
-            "num_friends": prng.uniform(low=0, high=5, size=size).astype(
-                "<i8"
-            ),
-        }
-    )
-    high_school_size = size // 10
-    t["high_school"] = spt.dict_to_recarray(
-        {
-            spt.IDX: prng.choice(
-                t["elementary_school"][spt.IDX],
-                size=high_school_size,
-                replace=False,
-            ),
-            "time_spent_on_homework": 100
-            + 100 * prng.uniform(size=high_school_size).astype("<f8"),
-            "num_best_friends": prng.uniform(
-                low=0, high=5, size=high_school_size
-            ).astype("<i8"),
-        }
-    )
-    university_size = high_school_size // 10
-    t["university"] = spt.dict_to_recarray(
-        {
-            spt.IDX: prng.choice(
-                t["high_school"][spt.IDX], size=university_size, replace=False
-            ),
-            "num_missed_classes": 100
-            * prng.uniform(size=university_size).astype("<i8"),
-            "num_fellow_students": prng.uniform(
-                low=0, high=5, size=university_size
-            ).astype("<i8"),
-        }
-    )
-    spt.testing.assert_structure_keys_are_valid(
-        structure=EXAMPLE_TABLE_STRUCTURE
-    )
-    spt.testing.assert_table_has_structure(
-        table=t, structure=EXAMPLE_TABLE_STRUCTURE
-    )
-    return t
-
-
 def test_from_records():
     prng = np.random.Generator(np.random.MT19937(seed=0))
     rnd = prng.uniform
@@ -150,11 +78,12 @@ def test_from_records():
 def test_write_read_full_table():
     prng = np.random.Generator(np.random.MT19937(seed=1337))
 
-    my_table = _make_example_table(prng=prng, size=1000 * 1000)
+    my_table = spt.testing.make_example_table(prng=prng, size=1000 * 1000)
+    my_table_structure = spt.testing.make_example_table_structure()
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "my_table.tar")
-        spt.write(path=path, table=my_table, structure=EXAMPLE_TABLE_STRUCTURE)
-        my_table_back = spt.read(path=path, structure=EXAMPLE_TABLE_STRUCTURE)
+        spt.write(path=path, table=my_table, structure=my_table_structure)
+        my_table_back = spt.read(path=path, structure=my_table_structure)
         spt.testing.assert_tables_are_equal(my_table, my_table_back)
 
         # no structure
@@ -163,20 +92,21 @@ def test_write_read_full_table():
         my_table_back_nos = spt.read(path=path_nos)
         spt.testing.assert_tables_are_equal(my_table, my_table_back_nos)
         spt.testing.assert_table_has_structure(
-            table=my_table_back_nos, structure=EXAMPLE_TABLE_STRUCTURE
+            table=my_table_back_nos, structure=my_table_structure
         )
 
 
 def test_write_read_empty_table():
     prng = np.random.Generator(np.random.MT19937(seed=1337))
 
-    empty_table = _make_example_table(prng=prng, size=0)
+    empty_table = spt.testing.make_example_table(prng=prng, size=0)
+    empty_table_structure = spt.testing.make_example_table_structure()
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "my_empty_table.tar")
         spt.write(
-            path=path, table=empty_table, structure=EXAMPLE_TABLE_STRUCTURE
+            path=path, table=empty_table, structure=empty_table_structure
         )
-        my_table_back = spt.read(path=path, structure=EXAMPLE_TABLE_STRUCTURE)
+        my_table_back = spt.read(path=path, structure=empty_table_structure)
         spt.testing.assert_tables_are_equal(empty_table, my_table_back)
 
         # no structure
@@ -185,14 +115,14 @@ def test_write_read_empty_table():
         my_table_back_nos = spt.read(path=path_nos)
         spt.testing.assert_tables_are_equal(empty_table, my_table_back_nos)
         spt.testing.assert_table_has_structure(
-            table=my_table_back_nos, structure=EXAMPLE_TABLE_STRUCTURE
+            table=my_table_back_nos, structure=empty_table_structure
         )
 
 
 def test_merge_common():
     prng = np.random.Generator(np.random.MT19937(seed=1337))
 
-    my_table = _make_example_table(prng=prng, size=1000 * 1000)
+    my_table = spt.testing.make_example_table(prng=prng, size=1000 * 1000)
 
     common_indices = spt.intersection(
         [my_table[lvl][spt.IDX] for lvl in my_table]
@@ -227,7 +157,7 @@ def test_merge_across_all_levels_random_order_indices():
     prng = np.random.Generator(np.random.MT19937(seed=1337))
 
     size = 1000 * 1000
-    my_table = _make_example_table(prng=prng, size=size)
+    my_table = spt.testing.make_example_table(prng=prng, size=size)
 
     has_elementary_school = my_table["elementary_school"][spt.IDX]
     has_high_school = my_table["high_school"][spt.IDX]
@@ -271,7 +201,7 @@ def test_merge_random_order_indices():
     prng = np.random.Generator(np.random.MT19937(seed=1337))
 
     size = 1000 * 1000
-    my_table = _make_example_table(prng=prng, size=size)
+    my_table = spt.testing.make_example_table(prng=prng, size=size)
 
     has_elementary_school = my_table["elementary_school"][spt.IDX]
     has_high_school = my_table["high_school"][spt.IDX]
@@ -318,22 +248,23 @@ def test_concatenate_several_tables():
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         paths = []
         for i in range(num_blocks):
-            table_i = _make_example_table(
+            table_i = spt.testing.make_example_table(
                 prng=prng, size=block_size, start_index=i * block_size
             )
+            table_i_structure = spt.testing.make_example_table_structure()
             paths.append(os.path.join(tmp, "{:06d}.tar".format(i)))
             spt.write(
                 path=paths[-1],
                 table=table_i,
-                structure=EXAMPLE_TABLE_STRUCTURE,
+                structure=table_i_structure,
             )
         output_path = os.path.join(tmp, "full.tar")
         full_table = spt.concatenate_files(
             list_of_table_paths=paths,
-            structure=EXAMPLE_TABLE_STRUCTURE,
+            structure=table_i_structure,
         )
     spt.testing.assert_table_has_structure(
-        table=full_table, structure=EXAMPLE_TABLE_STRUCTURE
+        table=full_table, structure=table_i_structure
     )
 
     assert (
@@ -363,10 +294,11 @@ def test_concatenate_several_tables():
 
 
 def test_concatenate_empty_list_of_paths():
+    structure = spt.testing.make_example_table_structure()
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         output_path = os.path.join(tmp, "empty_table.tar")
         empty_table = spt.concatenate_files(
-            list_of_table_paths=[], structure=EXAMPLE_TABLE_STRUCTURE
+            list_of_table_paths=[], structure=structure
         )
     assert empty_table["elementary_school"][spt.IDX].shape[0] == 0
 
@@ -404,7 +336,7 @@ def test_only_index_in_level():
 def test_write_sff_read_full_table():
     prng = np.random.Generator(np.random.MT19937(seed=1337))
 
-    my_table = _make_example_table(prng=prng, size=1000 * 1000)
+    my_table = spt.testing.make_example_table(prng=prng, size=1000 * 1000)
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(".", "my_table.tar")
 

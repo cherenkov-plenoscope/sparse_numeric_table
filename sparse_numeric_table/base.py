@@ -42,3 +42,7 @@ def make_mask_of_right_in_left(left_indices, right_indices):
     indicator_df = mask_df["_merge"]
     mask = np.array(indicator_df == "both", dtype=bool)
     return mask
+
+
+def dict_to_recarray(d):
+    return pd.DataFrame(d).to_records(index=False)

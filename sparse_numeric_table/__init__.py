@@ -70,6 +70,15 @@ sparse tables
         |_ level_3/column_p
 """
 from .version import __version__
+from . import tarstream
+from .base import IDX
+from .base import IDX_DTYPE
+from .base import LEVEL_COLUMN_DELIMITER
+from .base import FILEAME_TEMPLATE
+from .base import DTYPES
+from .base import make_mask_of_right_in_left
+
+
 import pandas as pd
 import numpy as np
 import tarfile
@@ -221,28 +230,6 @@ def cut_and_sort_table_on_indices(table, common_indices, level_keys=None):
         table=out, common_indices=common_indices
     )
     return out
-
-
-def make_mask_of_right_in_left(left_indices, right_indices):
-    """
-    Returns a mask for left indices indicating wheter a right index is in it.
-
-    Parameters
-    ----------
-    left_indices : list of indices
-
-    right_indices : list of indices
-
-    Example
-    -------
-    [0, 1, 0, 0] = make_mask_of_right_in_left([1,2,3,4], [0,2,9])
-    """
-    left_df = pd.DataFrame({IDX: left_indices})
-    right_df = pd.DataFrame({IDX: right_indices})
-    mask_df = pd.merge(left_df, right_df, on=IDX, how="left", indicator=True)
-    indicator_df = mask_df["_merge"]
-    mask = np.array(indicator_df == "both", dtype=np.int64)
-    return mask
 
 
 def make_rectangular_DataFrame(table):

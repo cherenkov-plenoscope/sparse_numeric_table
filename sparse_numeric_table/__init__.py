@@ -89,26 +89,6 @@ import tempfile
 import os
 
 
-IDX = "idx"
-IDX_DTYPE = "<u8"
-
-LEVEL_COLUMN_DELIMITER = "/"
-FILEAME_TEMPLATE = "{:s}" + LEVEL_COLUMN_DELIMITER + "{:s}.{:s}"
-
-DTYPES = [
-    "<u1",
-    "<u2",
-    "<u4",
-    "<u8",
-    "<i1",
-    "<i2",
-    "<i4",
-    "<i8",
-    "<f2",
-    "<f4",
-    "<f8",
-]
-
 # logical operations
 # ==================
 

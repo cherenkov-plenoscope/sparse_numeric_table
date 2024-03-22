@@ -68,8 +68,12 @@ def _make_example_table(prng, size, start_index=0):
             ).astype("<i8"),
         }
     )
-    spt.assert_structure_keys_are_valid(structure=EXAMPLE_TABLE_STRUCTURE)
-    spt.assert_table_has_structure(table=t, structure=EXAMPLE_TABLE_STRUCTURE)
+    spt.testing.assert_structure_keys_are_valid(
+        structure=EXAMPLE_TABLE_STRUCTURE
+    )
+    spt.testing.assert_table_has_structure(
+        table=t, structure=EXAMPLE_TABLE_STRUCTURE
+    )
     return t
 
 
@@ -138,7 +142,9 @@ def test_from_records():
             list_of_table_paths=job_result_paths, structure=structure
         )
 
-    spt.assert_table_has_structure(table=full_table, structure=structure)
+    spt.testing.assert_table_has_structure(
+        table=full_table, structure=structure
+    )
 
 
 def test_write_read_full_table():
@@ -149,14 +155,14 @@ def test_write_read_full_table():
         path = os.path.join(tmp, "my_table.tar")
         spt.write(path=path, table=my_table, structure=EXAMPLE_TABLE_STRUCTURE)
         my_table_back = spt.read(path=path, structure=EXAMPLE_TABLE_STRUCTURE)
-        spt.assert_tables_are_equal(my_table, my_table_back)
+        spt.testing.assert_tables_are_equal(my_table, my_table_back)
 
         # no structure
         path_nos = os.path.join(tmp, "my_table_no_structure.tar")
         spt.write(path=path_nos, table=my_table)
         my_table_back_nos = spt.read(path=path_nos)
-        spt.assert_tables_are_equal(my_table, my_table_back_nos)
-        spt.assert_table_has_structure(
+        spt.testing.assert_tables_are_equal(my_table, my_table_back_nos)
+        spt.testing.assert_table_has_structure(
             table=my_table_back_nos, structure=EXAMPLE_TABLE_STRUCTURE
         )
 
@@ -171,14 +177,14 @@ def test_write_read_empty_table():
             path=path, table=empty_table, structure=EXAMPLE_TABLE_STRUCTURE
         )
         my_table_back = spt.read(path=path, structure=EXAMPLE_TABLE_STRUCTURE)
-        spt.assert_tables_are_equal(empty_table, my_table_back)
+        spt.testing.assert_tables_are_equal(empty_table, my_table_back)
 
         # no structure
         path_nos = os.path.join(tmp, "my_empty_table_no_structure.tar")
         spt.write(path=path_nos, table=empty_table)
         my_table_back_nos = spt.read(path=path_nos)
-        spt.assert_tables_are_equal(empty_table, my_table_back_nos)
-        spt.assert_table_has_structure(
+        spt.testing.assert_tables_are_equal(empty_table, my_table_back_nos)
+        spt.testing.assert_table_has_structure(
             table=my_table_back_nos, structure=EXAMPLE_TABLE_STRUCTURE
         )
 
@@ -326,7 +332,7 @@ def test_concatenate_several_tables():
             list_of_table_paths=paths,
             structure=EXAMPLE_TABLE_STRUCTURE,
         )
-    spt.assert_table_has_structure(
+    spt.testing.assert_table_has_structure(
         table=full_table, structure=EXAMPLE_TABLE_STRUCTURE
     )
 
@@ -386,13 +392,13 @@ def test_only_index_in_level():
         }
     )
 
-    spt.assert_table_has_structure(table=table, structure=structure)
+    spt.testing.assert_table_has_structure(table=table, structure=structure)
 
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "table_with_index_only_level.tar")
         spt.write(path=path, table=table, structure=structure)
         table_back = spt.read(path=path, structure=structure)
-        spt.assert_tables_are_equal(table, table_back)
+        spt.testing.assert_tables_are_equal(table, table_back)
 
 
 def test_write_sff_read_full_table():
@@ -408,4 +414,4 @@ def test_write_sff_read_full_table():
         with open(path, "rb") as f:
             my_table_back = spt.tarstream.read(f=f)
 
-        spt.assert_tables_are_equal(my_table, my_table_back)
+        spt.testing.assert_tables_are_equal(my_table, my_table_back)

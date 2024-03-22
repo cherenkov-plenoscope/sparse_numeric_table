@@ -183,7 +183,7 @@ def sort_table_on_common_indices(table, common_indices):
             The row-indices to sort by.
     """
     common_order_args = np.argsort(common_indices)
-    common_inv_order = np.zeros(shape=common_indices.shape, dtype=np.int)
+    common_inv_order = np.zeros(shape=common_indices.shape, dtype=np.int64)
     common_inv_order[common_order_args] = np.arange(len(common_indices))
     del common_order_args
 

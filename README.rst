@@ -1,5 +1,5 @@
 ####################
-Sparse-Numeric-Table
+Sparse Numeric Table
 ####################
 |TestStatus| |PyPiStatus| |BlackStyle| |BlackPackStyle| |MITLicenseBadge|
 

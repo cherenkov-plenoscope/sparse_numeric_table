@@ -46,3 +46,10 @@ def make_mask_of_right_in_left(left_indices, right_indices):
 
 def dict_to_recarray(d):
     return pd.DataFrame(d).to_records(index=False)
+
+
+def add_idx_to_level_dtype(level_dtype):
+    full_dtype = [(IDX, IDX_DTYPE)]
+    for column_key_dtype in level_dtype:
+        full_dtype.append(tuple(column_key_dtype))
+    return full_dtype

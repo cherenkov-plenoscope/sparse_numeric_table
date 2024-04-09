@@ -1,6 +1,7 @@
 from .base import IDX
 from .base import IDX_DTYPE
 from .base import make_mask_of_right_in_left
+from .base import add_idx_to_level_dtype
 
 import json
 import posixpath
@@ -135,10 +136,3 @@ def read(path=None, fileobj=None, mode="r|", levels=None, common_indices=None):
         dynrec = dynamic_table.pop(level_key)
         table[level_key] = dynrec.to_recarray()
     return table
-
-
-def add_idx_to_level_dtype(level_dtype):
-    full_dtype = [(IDX, IDX_DTYPE)]
-    for column_key_dtype in level_dtype:
-        full_dtype.append(tuple(column_key_dtype))
-    return full_dtype

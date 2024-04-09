@@ -79,6 +79,7 @@ from .base import FILEAME_TEMPLATE
 from .base import DTYPES
 from .base import make_mask_of_right_in_left
 from .base import dict_to_recarray
+from .base import add_idx_to_level_dtype
 
 import pandas as pd
 import numpy as np
@@ -94,7 +95,7 @@ def init(dtypes):
     testing.assert_dtypes_keys_are_valid(dtypes=dtypes)
     table = {}
     for level_key in dtypes:
-        full_level_dtype = [(IDX, IDX_DTYPE)] + dtypes[level_key]
+        full_level_dtype = add_idx_to_level_dtype(dtypes[level_key])
         table[level_key] = DynamicSizeRecarray(dtype=full_level_dtype)
     return table
 
@@ -434,7 +435,7 @@ def concatenate_files(list_of_table_paths, dtypes):
     if len(list_of_table_paths) == 0:
         out = {}
         for level_key in dtypes:
-            full_level_dtype = [(IDX, IDX_DTYPE)] + dtypes[level_key]
+            full_level_dtype = add_idx_to_level_dtype(dtypes[level_key])
             out[level_key] = np.frombuffer(b"", dtype=full_level_dtype)
         return out
 
@@ -448,7 +449,7 @@ def concatenate_files(list_of_table_paths, dtypes):
         out = {}
         for level_key in dtypes:
             with open(os.path.join(tmp, level_key), "rb") as f:
-                full_level_dtype = [(IDX, IDX_DTYPE)] + dtypes[level_key]
+                full_level_dtype = add_idx_to_level_dtype(dtypes[level_key])
                 out[level_key] = np.frombuffer(
                     f.read(), dtype=full_level_dtype
                 )
@@ -470,7 +471,7 @@ def _empty_recarray(dtypes, level_key):
 
 
 def records_to_recarray(level_records, level_key, dtypes):
-    full_level_dtype = [(IDX, IDX_DTYPE)] + dtypes[level_key]
+    full_level_dtype = add_idx_to_level_dtype(dtypes[level_key])
     out = DynamicSizeRecarray(dtype=full_level_dtype)
     out.append_records(records=level_records)
     return out.to_recarray()

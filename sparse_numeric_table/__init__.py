@@ -402,6 +402,7 @@ def read(path, dtypes=None):
 # concatenate
 # ===========
 
+
 def concatenate_files(list_of_table_paths, dtypes):
     if len(list_of_table_paths) == 0:
         out = {}
@@ -430,15 +431,6 @@ def concatenate_files(list_of_table_paths, dtypes):
 
 # from records
 # ============
-
-
-def _empty_recarray(dtypes, level_key):
-    dd = {IDX: np.zeros(0, dtype=IDX_DTYPE)}
-    for column_key in dtypes[level_key]:
-        dd[column_key] = np.zeros(
-            0, dtype=dtypes[level_key][column_key]["dtype"]
-        )
-    return dict_to_recarray(dd)
 
 
 def records_to_recarray(level_records, level_key, dtypes):

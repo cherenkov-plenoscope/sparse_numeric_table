@@ -1,7 +1,7 @@
 ####################
 Sparse-Numeric-Table
 ####################
-|TestStatus| |PyPiStatus| |BlackStyle| |PackStyleBlack|
+|TestStatus| |PyPiStatus| |BlackStyle| |BlackPackStyle| |MITLicenseBadge|
 
 
 Query, write, and read sparse, numeric tables.
@@ -92,5 +92,8 @@ Here ``A`` , ``B`` , and ``C`` are the ``level`` -keys. ``a, ... , n`` are the c
 .. |BlackStyle| image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/psf/black
 
-.. |PackStyleBlack| image:: https://img.shields.io/badge/pack%20style-black-000000.svg
+.. |BlackPackStyle| image:: https://img.shields.io/badge/pack%20style-black-000000.svg
     :target: https://github.com/cherenkov-plenoscope/black_pack
+
+.. |MITLicenseBadge| image:: https://img.shields.io/badge/License-MIT-yellow.svg
+    :target: https://opensource.org/licenses/MIT

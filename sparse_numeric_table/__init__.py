@@ -402,25 +402,6 @@ def read(path, dtypes=None):
 # concatenate
 # ===========
 
-
-def _make_tmp_paths(tmp, dtypes):
-    tmp_paths = {}
-    for level_key in dtypes:
-        tmp_paths[level_key] = {}
-        idx_fname = FILEAME_TEMPLATE.format(level_key, IDX, IDX_DTYPE)
-        tmp_paths[level_key][IDX] = os.path.join(tmp, idx_fname)
-        for column in dtypes[level_key]:
-            column_key = column[0]
-            column_dtype = str(column[1])
-            column_filename = FILEAME_TEMPLATE.format(
-                level_key, column_key, column_dtype
-            )
-            tmp_paths[level_key][column_key] = os.path.join(
-                tmp, column_filename
-            )
-    return tmp_paths
-
-
 def concatenate_files(list_of_table_paths, dtypes):
     if len(list_of_table_paths) == 0:
         out = {}

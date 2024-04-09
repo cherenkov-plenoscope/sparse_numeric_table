@@ -12,9 +12,14 @@ def test_write_sff_read_full_table():
         path = os.path.join(tmp, "my_table.tar")
 
         with open(path, "wb") as f:
-            spt.tarstream.write(f=f, snt=my_table, level_block_size=int(1e5))
+            spt.tarstream.write(
+                fileobj=f, table=my_table, level_block_size=int(1e5)
+            )
 
         with open(path, "rb") as f:
-            my_table_back = spt.tarstream.read(f=f)
+            my_table_back = spt.tarstream.read(fileobj=f)
+
+        my_table_back2 = spt.tarstream.read(path=path)
 
         spt.testing.assert_tables_are_equal(my_table, my_table_back)
+        spt.testing.assert_tables_are_equal(my_table, my_table_back2)

@@ -9,29 +9,36 @@ import sequential_tar
 import dynamicsizerecarray
 
 
-def write(f, snt, mode="w|", level_mode="wb|gz", level_block_size=2**25):
+def write(
+    table,
+    path=None,
+    fileobj=None,
+    mode="w|",
+    level_mode="wb|gz",
+    level_block_size=2**25,
+):
     assert mode.startswith("w|")
     assert level_mode.startswith("wb|")
     assert level_block_size > 0
 
-    with sequential_tar.open(fileobj=f, mode=mode) as tarf:
-        tarf.write(
+    num_bytes_written = 0
+    with sequential_tar.open(name=path, fileobj=fileobj, mode=mode) as tarf:
+        num_bytes_written += tarf.write(
             name="dtype.json",
-            payload=dumps_dtype(snt=snt),
+            payload=dumps_dtype(table=table),
             mode="wt",
         )
 
-        for level_key in snt:
+        for level_key in table:
             single_record_size = estimate_single_record_size(
-                dtype=snt[level_key].dtype,
+                dtype=table[level_key].dtype,
             )
             num_records_per_block = int(
                 np.ceil(level_block_size / single_record_size)
             )
 
-            num_records_written = 0
             block_id = 0
-            ifinal = len(snt[level_key]) - 1
+            ifinal = len(table[level_key]) - 1
             istart = 0
             istop = 0
 
@@ -45,23 +52,24 @@ def write(f, snt, mode="w|", level_mode="wb|gz", level_block_size=2**25):
                 istart = block_id * num_records_per_block
                 istop = istart + num_records_per_block
 
-                level_block = snt[level_key][istart:istop]
+                level_block = table[level_key][istart:istop]
 
-                tarf.write(
+                num_bytes_written += tarf.write(
                     name=block_filename,
                     payload=level_block.tobytes(),
                     mode=level_mode,
                 )
 
                 block_id += 1
+    return num_bytes_written
 
 
-def dumps_dtype(snt):
+def dumps_dtype(table):
     out = {}
-    for level_key in snt:
+    for level_key in table:
         out[level_key] = []
         outlevel = out[level_key]
-        level = snt[level_key]
+        level = table[level_key]
 
         for column_key in level.dtype.names:
             if not column_key is IDX:
@@ -77,12 +85,12 @@ def estimate_single_record_size(dtype):
     return len(dummy_bytes)
 
 
-def read(f, mode="r|", levels=None, indices=None):
+def read(path=None, fileobj=None, mode="r|", levels=None, common_indices=None):
     assert mode.startswith("r|")
     dynamic_table = {}
     file_table_dtype = {}
 
-    with sequential_tar.open(fileobj=f, mode=mode) as tarf:
+    with sequential_tar.open(name=path, fileobj=fileobj, mode=mode) as tarf:
         item = tarf.next()
         filetext = item.read(mode="rt")
         assert item.name == "dtype.json"
@@ -113,20 +121,20 @@ def read(f, mode="r|", levels=None, indices=None):
                 block_rec = np.frombuffer(
                     buff, dtype=file_table_dtype[level_key]
                 )
-                if indices is not None:
+                if common_indices is not None:
                     block_mask = make_mask_of_right_in_left(
                         left_indices=block_rec[IDX],
-                        right_indices=indices,
+                        right_indices=common_indices,
                     )
                     block_rec = block_rec[block_mask]
                 dynamic_table[level_key].append_recarray(block_rec)
 
-    snt = {}
-    dsnt_level_keys = list(dynamic_table.keys())
-    for level_key in dsnt_level_keys:
+    table = {}
+    dtable_level_keys = list(dynamic_table.keys())
+    for level_key in dtable_level_keys:
         dynrec = dynamic_table.pop(level_key)
-        snt[level_key] = dynrec.to_recarray()
-    return snt
+        table[level_key] = dynrec.to_recarray()
+    return table
 
 
 def add_idx_to_level_dtype(level_dtype):

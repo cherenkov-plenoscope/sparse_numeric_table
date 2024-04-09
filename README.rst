@@ -14,7 +14,7 @@ Restictions
 
 Pros
 ====
-- Fast read / write with ``numpy`` binaries (explicit endianness).
+- Fast read / write with ``numpy`` binaries.
 - Just a ``dict`` of ``numpy.recarray``'s. No classes. No stateful functions.
 - Easy to explore files in the tapearchive ``.tar``.
 
@@ -39,24 +39,23 @@ Columns which only appear together are bundeled into a ``level`` . Each ``level`
 
 .. code-block:: python
 
-    my_table_structure = {
-        "A": {
-            "a": {"dtype": "<u8"},
-            "b": {"dtype": "<f8"},
-            "c": {"dtype": "<f4"},
-        },
-        "B": {
-            "g": {"dtype": "<i8"},
-        },
-        "C": {
-            "m": {"dtype": "<i2"},
-            "n": {"dtype": "<u8", "comment": "Some comment related to 'n'."},
-        },
+    my_table_dtypes = {
+        "A": [
+            ("a", "<u8"),
+            ("b", "<f8"),
+            ("c", "<f4"),
+        ],
+        "B": [
+            ("g", "<i8"),
+        ],
+        "C": [
+            ("m", "<i2"),
+            ("n", "<u8"),
+        ],
     }
 
 
 Here ``A`` , ``B`` , and ``C`` are the ``level`` -keys. ``a, ... , n`` are the column-keys.
-You can add comments for yourself, but ``sparse_numeric_table`` will ignore these.
 
 2nd) You create/read/write the table.
 

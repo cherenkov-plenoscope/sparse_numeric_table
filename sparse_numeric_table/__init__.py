@@ -87,6 +87,7 @@ import io
 import shutil
 import tempfile
 import os
+import dynamicsizerecarray
 
 
 # logical operations
@@ -252,7 +253,7 @@ def _append_tar(tarfout, name, payload_bytes):
         tarfout.addfile(tarinfo=tarinfo, fileobj=fileobj)
 
 
-def write(path, table, structure=None):
+def write(path, table, dtypes=None):
     """
     Writes the table to path.
 
@@ -264,13 +265,13 @@ def write(path, table, structure=None):
     table : dict of recarrays
             The sparse table.
 
-    structure : dict (default: None)
-            The structure of the table. If provided it is asserted that the
-            table written has the provided structure.
+    dtypes : dict (default: None)
+            The dtypes of the table. If provided it is asserted that the
+            table written has the provided dtypes.
     """
 
-    if structure:
-        testing.assert_table_has_structure(table=table, structure=structure)
+    if dtypes:
+        testing.assert_table_has_dtypes(table=table, dtypes=dtypes)
 
     with tarfile.open(path + ".tmp", "w") as tarfout:
         for level_key in table:
@@ -293,7 +294,7 @@ def _split_level_column_dtype(path):
     return level_key, column_key, dtype_key
 
 
-def read(path, structure=None):
+def read(path, dtypes=None):
     """
     Returns table which is read from path.
 
@@ -302,9 +303,9 @@ def read(path, structure=None):
     path : string
             Path to tape-archive in filesystem
 
-    structure : dict (default: None)
-            The structure of the table. If provided it is asserted that the
-            table read has the provided structure.
+    dtypes : dict (default: None)
+            The dtypes of the table. If provided it is asserted that the
+            table read has the provided dtypes.
     """
     out = {}
     with tarfile.open(path, "r") as tarfin:
@@ -323,8 +324,8 @@ def read(path, structure=None):
     for level_key in out:
         out[level_key] = dict_to_recarray(out[level_key])
 
-    if structure:
-        testing.assert_table_has_structure(table=out, structure=structure)
+    if dtypes:
+        testing.assert_table_has_dtypes(table=out, dtypes=dtypes)
     return out
 
 
@@ -332,46 +333,47 @@ def read(path, structure=None):
 # ===========
 
 
-def _make_tmp_paths(tmp, structure):
+def _make_tmp_paths(tmp, dtypes):
     tmp_paths = {}
-    for level_key in structure:
+    for level_key in dtypes:
         tmp_paths[level_key] = {}
         idx_fname = FILEAME_TEMPLATE.format(level_key, IDX, IDX_DTYPE)
         tmp_paths[level_key][IDX] = os.path.join(tmp, idx_fname)
-        for column_key in structure[level_key]:
-            col_dt = structure[level_key][column_key]["dtype"]
-            col_fname = FILEAME_TEMPLATE.format(level_key, column_key, col_dt)
-            tmp_paths[level_key][column_key] = os.path.join(tmp, col_fname)
+        for column in dtypes[level_key]:
+            column_key = column[0]
+            column_dtype = str(column[1])
+            column_filename = FILEAME_TEMPLATE.format(
+                level_key, column_key, column_dtype
+            )
+            tmp_paths[level_key][column_key] = os.path.join(
+                tmp, column_filename
+            )
     return tmp_paths
 
 
-def concatenate_files(list_of_table_paths, structure):
-    with tempfile.TemporaryDirectory(prefix="sparse_table_concatenate") as tmp:
-        tmp_paths = _make_tmp_paths(tmp=tmp, structure=structure)
-        for table_path in list_of_table_paths:
-            _part_table = read(path=table_path, structure=structure)
-            for level_key in tmp_paths:
-                os.makedirs(os.path.join(tmp, level_key), exist_ok=True)
-                for column_key in tmp_paths[level_key]:
-                    with open(tmp_paths[level_key][column_key], "ab") as fa:
-                        fa.write(_part_table[level_key][column_key].tobytes())
+def concatenate_files(list_of_table_paths, dtypes):
+    if len(list_of_table_paths) == 0:
         out = {}
-        for level_key in tmp_paths:
-            out[level_key] = {}
-            for column_key in tmp_paths[level_key]:
-                if column_key == IDX:
-                    dtype = IDX_DTYPE
-                else:
-                    dtype = structure[level_key][column_key]["dtype"]
+        for level_key in dtypes:
+            full_level_dtype = [(IDX, IDX_DTYPE)] + dtypes[level_key]
+            out[level_key] = np.frombuffer(b"", dtype=full_level_dtype)
+        return out
 
-                if os.path.exists(tmp_paths[level_key][column_key]):
-                    out[level_key][column_key] = np.fromfile(
-                        tmp_paths[level_key][column_key], dtype=dtype
-                    )
-                else:
-                    out[level_key][column_key] = np.zeros(0, dtype=dtype)
-    for level_key in out:
-        out[level_key] = dict_to_recarray(out[level_key])
+    with tempfile.TemporaryDirectory(prefix="sparse_table_concatenate") as tmp:
+        for part_table_path in list_of_table_paths:
+            part_table = read(path=part_table_path, dtypes=dtypes)
+            for level_key in dtypes:
+                with open(os.path.join(tmp, level_key), "ab") as fa:
+                    fa.write(part_table[level_key].tobytes())
+
+        out = {}
+        for level_key in dtypes:
+            with open(os.path.join(tmp, level_key), "rb") as f:
+                full_level_dtype = [(IDX, IDX_DTYPE)] + dtypes[level_key]
+                out[level_key] = np.frombuffer(
+                    f.read(), dtype=full_level_dtype
+                )
+
     return out
 
 
@@ -379,38 +381,29 @@ def concatenate_files(list_of_table_paths, structure):
 # ============
 
 
-def _empty_recarray(structure, level_key):
+def _empty_recarray(dtypes, level_key):
     dd = {IDX: np.zeros(0, dtype=IDX_DTYPE)}
-    for column_key in structure[level_key]:
+    for column_key in dtypes[level_key]:
         dd[column_key] = np.zeros(
-            0, dtype=structure[level_key][column_key]["dtype"]
+            0, dtype=dtypes[level_key][column_key]["dtype"]
         )
     return dict_to_recarray(dd)
 
 
-def records_to_recarray(level_records, level_key, structure):
-    expected_keys = list(structure[level_key].keys()) + [IDX]
-    if len(level_records) > 0:
-        for record in level_records:
-            testing._assert_same_keys(expected_keys, list(record.keys()))
-        df = pd.DataFrame(level_records)
-        dd = {IDX: df[IDX].values.astype(IDX_DTYPE)}
-        for column_key in structure[level_key]:
-            dd[column_key] = df[column_key].values.astype(
-                structure[level_key][column_key]["dtype"]
-            )
-        return dict_to_recarray(dd)
-    else:
-        return _empty_recarray(structure=structure, level_key=level_key)
+def records_to_recarray(level_records, level_key, dtypes):
+    full_level_dtype = [(IDX, IDX_DTYPE)] + dtypes[level_key]
+    out = dynamicsizerecarray.DynamicSizeRecarray(dtype=full_level_dtype)
+    out.append_records(records=level_records)
+    return out.to_recarray()
 
 
-def table_of_records_to_sparse_numeric_table(table_records, structure):
+def table_of_records_to_sparse_numeric_table(table_records, dtypes):
     table = {}
     for level_key in table_records:
         table[level_key] = records_to_recarray(
             level_records=table_records[level_key],
             level_key=level_key,
-            structure=structure,
+            dtypes=dtypes,
         )
     return table
 

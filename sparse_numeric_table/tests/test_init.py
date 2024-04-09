@@ -11,18 +11,10 @@ def test_from_records():
 
     # define what your table will look like
     # -------------------------------------
-    structure = {
-        "A": {
-            "a": {"dtype": "<f8"},
-            "b": {"dtype": "<f8"},
-        },
-        "B": {
-            "c": {"dtype": "<f8"},
-            "d": {"dtype": "<f8"},
-        },
-        "C": {
-            "e": {"dtype": "<f8"},
-        },
+    dtypes = {
+        "A": [("a", "<f8"), ("b", "<f8")],
+        "B": [("c", "<f8"), ("d", "<f8")],
+        "C": [("e", "<f8")],
     }
 
     # populate the table using records
@@ -57,42 +49,40 @@ def test_from_records():
                 table_records["C"].append({spt.IDX: i + 3, "e": -rnd()})
 
             table = spt.table_of_records_to_sparse_numeric_table(
-                table_records=table_records, structure=structure
+                table_records=table_records, dtypes=dtypes
             )
 
             path = os.path.join(tmp, "{:06d}.tar".format(j))
             job_result_paths.append(path)
-            spt.write(path=path, table=table, structure=structure)
+            spt.write(path=path, table=table, dtypes=dtypes)
 
         # reduce
         # ------
         full_table = spt.concatenate_files(
-            list_of_table_paths=job_result_paths, structure=structure
+            list_of_table_paths=job_result_paths, dtypes=dtypes
         )
 
-    spt.testing.assert_table_has_structure(
-        table=full_table, structure=structure
-    )
+    spt.testing.assert_table_has_dtypes(table=full_table, dtypes=dtypes)
 
 
 def test_write_read_full_table():
     prng = np.random.Generator(np.random.MT19937(seed=1337))
 
     my_table = spt.testing.make_example_table(prng=prng, size=1000 * 1000)
-    my_table_structure = spt.testing.make_example_table_structure()
+    my_table_dtypes = spt.testing.make_example_table_dtypes()
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "my_table.tar")
-        spt.write(path=path, table=my_table, structure=my_table_structure)
-        my_table_back = spt.read(path=path, structure=my_table_structure)
+        spt.write(path=path, table=my_table, dtypes=my_table_dtypes)
+        my_table_back = spt.read(path=path, dtypes=my_table_dtypes)
         spt.testing.assert_tables_are_equal(my_table, my_table_back)
 
-        # no structure
-        path_nos = os.path.join(tmp, "my_table_no_structure.tar")
+        # no dtypes
+        path_nos = os.path.join(tmp, "my_table_no_dtypes.tar")
         spt.write(path=path_nos, table=my_table)
         my_table_back_nos = spt.read(path=path_nos)
         spt.testing.assert_tables_are_equal(my_table, my_table_back_nos)
-        spt.testing.assert_table_has_structure(
-            table=my_table_back_nos, structure=my_table_structure
+        spt.testing.assert_table_has_dtypes(
+            table=my_table_back_nos, dtypes=my_table_dtypes
         )
 
 
@@ -100,22 +90,20 @@ def test_write_read_empty_table():
     prng = np.random.Generator(np.random.MT19937(seed=1337))
 
     empty_table = spt.testing.make_example_table(prng=prng, size=0)
-    empty_table_structure = spt.testing.make_example_table_structure()
+    empty_table_dtypes = spt.testing.make_example_table_dtypes()
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "my_empty_table.tar")
-        spt.write(
-            path=path, table=empty_table, structure=empty_table_structure
-        )
-        my_table_back = spt.read(path=path, structure=empty_table_structure)
+        spt.write(path=path, table=empty_table, dtypes=empty_table_dtypes)
+        my_table_back = spt.read(path=path, dtypes=empty_table_dtypes)
         spt.testing.assert_tables_are_equal(empty_table, my_table_back)
 
-        # no structure
-        path_nos = os.path.join(tmp, "my_empty_table_no_structure.tar")
+        # no dtypes
+        path_nos = os.path.join(tmp, "my_empty_table_no_dtypes.tar")
         spt.write(path=path_nos, table=empty_table)
         my_table_back_nos = spt.read(path=path_nos)
         spt.testing.assert_tables_are_equal(empty_table, my_table_back_nos)
-        spt.testing.assert_table_has_structure(
-            table=my_table_back_nos, structure=empty_table_structure
+        spt.testing.assert_table_has_dtypes(
+            table=my_table_back_nos, dtypes=empty_table_dtypes
         )
 
 
@@ -251,20 +239,20 @@ def test_concatenate_several_tables():
             table_i = spt.testing.make_example_table(
                 prng=prng, size=block_size, start_index=i * block_size
             )
-            table_i_structure = spt.testing.make_example_table_structure()
+            table_i_dtypes = spt.testing.make_example_table_dtypes()
             paths.append(os.path.join(tmp, "{:06d}.tar".format(i)))
             spt.write(
                 path=paths[-1],
                 table=table_i,
-                structure=table_i_structure,
+                dtypes=table_i_dtypes,
             )
         output_path = os.path.join(tmp, "full.tar")
         full_table = spt.concatenate_files(
             list_of_table_paths=paths,
-            structure=table_i_structure,
+            dtypes=table_i_dtypes,
         )
-    spt.testing.assert_table_has_structure(
-        table=full_table, structure=table_i_structure
+    spt.testing.assert_table_has_dtypes(
+        table=full_table, dtypes=table_i_dtypes
     )
 
     assert (
@@ -294,11 +282,11 @@ def test_concatenate_several_tables():
 
 
 def test_concatenate_empty_list_of_paths():
-    structure = spt.testing.make_example_table_structure()
+    dtypes = spt.testing.make_example_table_dtypes()
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         output_path = os.path.join(tmp, "empty_table.tar")
         empty_table = spt.concatenate_files(
-            list_of_table_paths=[], structure=structure
+            list_of_table_paths=[], dtypes=dtypes
         )
     assert empty_table["elementary_school"][spt.IDX].shape[0] == 0
 
@@ -306,9 +294,9 @@ def test_concatenate_empty_list_of_paths():
 def test_only_index_in_level():
     prng = np.random.Generator(np.random.MT19937(seed=1337))
 
-    structure = {
-        "A": {"height": {"dtype": "<i8"}},
-        "B": {},
+    dtypes = {
+        "A": [("height", "<i8")],
+        "B": [],
     }
 
     table = {}
@@ -324,10 +312,10 @@ def test_only_index_in_level():
         }
     )
 
-    spt.testing.assert_table_has_structure(table=table, structure=structure)
+    spt.testing.assert_table_has_dtypes(table=table, dtypes=dtypes)
 
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "table_with_index_only_level.tar")
-        spt.write(path=path, table=table, structure=structure)
-        table_back = spt.read(path=path, structure=structure)
+        spt.write(path=path, table=table, dtypes=dtypes)
+        table_back = spt.read(path=path, dtypes=dtypes)
         spt.testing.assert_tables_are_equal(table, table_back)

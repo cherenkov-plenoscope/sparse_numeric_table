@@ -34,8 +34,8 @@ def assert_tables_are_equal(table_a, table_b):
             )
 
 
-def assert_table_has_structure(table, structure):
-    for level_key in structure:
+def assert_table_has_dtypes(table, dtypes):
+    for level_key in dtypes:
         assert (
             level_key in table
         ), "Expected level '{:s}' in table, but it is not.".format(level_key)
@@ -52,19 +52,20 @@ def assert_table_has_structure(table, structure):
                 str(table[level_key].dtype[IDX]),
             )
         )
-        for column_key in structure[level_key]:
+        for column in dtypes[level_key]:
+            column_key = column[0]
+            column_dtype = column[1]
             assert column_key in table[level_key].dtype.names, (
                 "Expected column '{:s}' in table's level '{:s}', "
                 "but it is not.".format(column_key, level_key)
             )
-            expected_dtype = structure[level_key][column_key]["dtype"]
-            assert expected_dtype == table[level_key].dtype[column_key], (
+            assert column_dtype == table[level_key].dtype[column_key], (
                 "Expected table[{level_key:s}][{column_key:s}].dtype "
-                "== {expected_dtype:s}, "
+                "== {column_dtype:s}, "
                 "but actually it is {actual_dtype:s}".format(
                     level_key=level_key,
                     column_key=column_key,
-                    expected_dtype=str(expected_dtype),
+                    column_dtype=str(column_dtype),
                     actual_dtype=str(table[level_key].dtype[column_key]),
                 )
             )
@@ -98,36 +99,38 @@ def _assert_key_is_valid(key):
     _assert_no_directory_delimeter(key)
 
 
-def assert_structure_keys_are_valid(structure):
-    for level_key in structure:
+def assert_dtypes_keys_are_valid(dtypes):
+    for level_key in dtypes:
         _assert_key_is_valid(level_key)
-        for column_key in structure[level_key]:
+        for column in dtypes[level_key]:
+            column_key = column[0]
+            column_dtype = column[1]
             assert IDX != column_key
             _assert_key_is_valid(column_key)
-            assert structure[level_key][column_key]["dtype"] in DTYPES, (
-                "Structure[{:s}][{:s}]['dtype'] = {:s} "
-                "is not in DTYPES".format(
+            assert column_dtype in DTYPES, (
+                "level: {:s}, column: {:s} has dtype: {:s} "
+                "which is not a valid for sparse_numeric_table.".format(
                     level_key,
                     column_key,
-                    str(structure[level_key][column_key]["dtype"]),
+                    str(column_dtype),
                 )
             )
 
 
-def make_example_table_structure():
+def make_example_table_dtypes():
     return {
-        "elementary_school": {
-            "lunchpack_size": {"dtype": "<f8"},
-            "num_friends": {"dtype": "<i8"},
-        },
-        "high_school": {
-            "time_spent_on_homework": {"dtype": "<f8"},
-            "num_best_friends": {"dtype": "<i8"},
-        },
-        "university": {
-            "num_missed_classes": {"dtype": "<i8"},
-            "num_fellow_students": {"dtype": "<i8"},
-        },
+        "elementary_school": [
+            ("lunchpack_size", "<f8"),
+            ("num_friends", "<i8"),
+        ],
+        "high_school": [
+            ("time_spent_on_homework", "<f8"),
+            ("num_best_friends", "<i8"),
+        ],
+        "university": [
+            ("num_missed_classes", "<i8"),
+            ("num_fellow_students", "<i8"),
+        ],
     }
 
 
@@ -140,7 +143,7 @@ def make_example_table(prng, size, start_index=0):
     Unfortunately, a typical example of a sparse table.
     """
 
-    example_table_structure = make_example_table_structure()
+    example_table_dtypes = make_example_table_dtypes()
 
     t = {}
     t["elementary_school"] = dict_to_recarray(
@@ -180,6 +183,6 @@ def make_example_table(prng, size, start_index=0):
             ).astype("<i8"),
         }
     )
-    assert_structure_keys_are_valid(structure=example_table_structure)
-    assert_table_has_structure(table=t, structure=example_table_structure)
+    assert_dtypes_keys_are_valid(dtypes=example_table_dtypes)
+    assert_table_has_dtypes(table=t, dtypes=example_table_dtypes)
     return t

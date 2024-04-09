@@ -186,3 +186,17 @@ def make_example_table(prng, size, start_index=0):
     assert_dtypes_keys_are_valid(dtypes=example_table_dtypes)
     assert_table_has_dtypes(table=t, dtypes=example_table_dtypes)
     return t
+
+
+def assert_dtypes_equal(a, b):
+    _assert_same_keys(list(b.keys()), list(b.keys()))
+    for level_key in a:
+        alvl = a[level_key]
+        blvl = b[level_key]
+        for i in range(len(alvl)):
+            a_column_name = alvl[i][0]
+            b_column_name = blvl[i][0]
+            assert a_column_name == b_column_name
+            a_column_dtype = alvl[i][1]
+            b_column_dtype = blvl[i][1]
+            assert a_column_dtype == b_column_dtype

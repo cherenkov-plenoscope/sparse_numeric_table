@@ -87,7 +87,86 @@ import io
 import shutil
 import tempfile
 import os
-import dynamicsizerecarray
+from dynamicsizerecarray import DynamicSizeRecarray
+
+
+def init(dtypes):
+    testing.assert_dtypes_keys_are_valid(dtypes=dtypes)
+    table = {}
+    for level_key in dtypes:
+        full_level_dtype = [(IDX, IDX_DTYPE)] + dtypes[level_key]
+        table[level_key] = DynamicSizeRecarray(dtype=full_level_dtype)
+    return table
+
+
+def get_dtypes(table):
+    out = {}
+    for level_key in table:
+        level_dtype = []
+        for column_key in table[level_key].dtype.names:
+            if column_key == IDX:
+                continue
+            column_dtype = table[level_key].dtype[column_key].descr[0][1]
+            level_dtype.append((column_key, column_dtype))
+        out[level_key] = level_dtype
+    return out
+
+
+def get_sizes(table):
+    out = {}
+    for level_key in table:
+        out[level_key] = table[level_key].shape[0]
+    return out
+
+
+def get_modes(table):
+    out = {}
+    for level_key in table:
+        if isinstance(table[level_key], DynamicSizeRecarray):
+            out[level_key] = "dynamic"
+        elif isinstance(table[level_key], np.recarray):
+            out[level_key] = "static"
+        else:
+            raise ValueError("Expected DynamicSizeRecarray or np.recarray")
+    return out
+
+
+def is_dynamic(table):
+    return _is_mode(table=table, mode="dynamic")
+
+
+def is_static(table):
+    return _is_mode(table=table, mode="static")
+
+
+def _is_mode(table, mode):
+    modes = get_modes(table)
+    for level_key in modes:
+        if modes[level_key] != mode:
+            return False
+    return True
+
+
+def to_static(table, inplace=False):
+    if inplace:
+        out = table
+    else:
+        out = {}
+    for level_key in table:
+        if isinstance(table[level_key], DynamicSizeRecarray):
+            out[level_key] = table[level_key].to_recarray()
+    return out
+
+
+def to_dynamic(table, inplace=False):
+    if inplace:
+        out = table
+    else:
+        out = {}
+    for level_key in table:
+        if isinstance(table[level_key], np.recarray):
+            out[level_key] = DynamicSizeRecarray(recarray=table[level_key])
+    return out
 
 
 # logical operations
@@ -392,7 +471,7 @@ def _empty_recarray(dtypes, level_key):
 
 def records_to_recarray(level_records, level_key, dtypes):
     full_level_dtype = [(IDX, IDX_DTYPE)] + dtypes[level_key]
-    out = dynamicsizerecarray.DynamicSizeRecarray(dtype=full_level_dtype)
+    out = DynamicSizeRecarray(dtype=full_level_dtype)
     out.append_records(records=level_records)
     return out.to_recarray()
 

@@ -4,13 +4,9 @@ from .base import make_mask_of_right_in_left
 
 import json
 import posixpath
-import gzip
 import numpy as np
-import tarfile
-import io
+import sequential_tar
 import dynamicsizerecarray
-import tempfile
-import rename_after_writing
 
 
 def write(f, snt, mode="w|", level_mode="wb|gz", level_block_size=2**25):
@@ -18,10 +14,9 @@ def write(f, snt, mode="w|", level_mode="wb|gz", level_block_size=2**25):
     assert level_mode.startswith("wb|")
     assert level_block_size > 0
 
-    with tarfile.open(fileobj=f, mode=mode) as tarf:
-        tarf_write(
-            tarf=tarf,
-            filename="dtype.json",
+    with sequential_tar.open(fileobj=f, mode=mode) as tarf:
+        tarf.write(
+            name="dtype.json",
             payload=dumps_dtype(snt=snt),
             mode="wt",
         )
@@ -52,35 +47,13 @@ def write(f, snt, mode="w|", level_mode="wb|gz", level_block_size=2**25):
 
                 level_block = snt[level_key][istart:istop]
 
-                tarf_write(
-                    tarf=tarf,
-                    filename=block_filename,
+                tarf.write(
+                    name=block_filename,
                     payload=level_block.tobytes(),
                     mode=level_mode,
                 )
 
                 block_id += 1
-
-
-def tarf_write(tarf, filename, payload, mode="wt"):
-    if "b" in mode:
-        payload_raw = payload
-    elif "t" in mode:
-        payload_raw = str.encode(payload)
-    else:
-        raise ValueError("mode must either contain 'b' or 't'.")
-
-    if "|gz" in mode:
-        assert str.endswith(filename, ".gz")
-        payload_bytes = gzip.compress(payload_raw)
-    else:
-        payload_bytes = payload_raw
-
-    with io.BytesIO() as buff:
-        tarinfo = tarfile.TarInfo(filename)
-        tarinfo.size = buff.write(payload_bytes)
-        buff.seek(0)
-        tarf.addfile(tarinfo, buff)
 
 
 def dumps_dtype(snt):
@@ -109,10 +82,10 @@ def read(f, mode="r|", levels=None, indices=None):
     dynamic_table = {}
     file_table_dtype = {}
 
-    with tarfile.open(fileobj=f, mode=mode) as tarf:
-        tarinfo = tarf.next()
-        filename, filetext = tarf_read(tarf=tarf, tarinfo=tarinfo, mode="rt")
-        assert filename == "dtype.json"
+    with sequential_tar.open(fileobj=f, mode=mode) as tarf:
+        item = tarf.next()
+        filetext = item.read(mode="rt")
+        assert item.name == "dtype.json"
         full_head = json.loads(filetext)
 
         if levels is None:
@@ -130,12 +103,12 @@ def read(f, mode="r|", levels=None, indices=None):
                 dtype=file_table_dtype[level_key]
             )
 
-        while True:
-            tarinfo = tarf.next()
-            if tarinfo is None:
-                break
-            name, buff = tarf_read(tarf=tarf, tarinfo=tarinfo, mode="rb")
-            level_key, block_id_str = posixpath.split(name)
+        for item in tarf:
+            if str.endswith(item.name, ".gz"):
+                buff = item.read(mode="rb|gz")
+            else:
+                buff = item.read(mode="rb")
+            level_key, block_id_str = posixpath.split(item.name)
             if level_key in head:
                 block_rec = np.frombuffer(
                     buff, dtype=file_table_dtype[level_key]
@@ -156,109 +129,8 @@ def read(f, mode="r|", levels=None, indices=None):
     return snt
 
 
-def tarf_read(tarf, tarinfo, mode="rt"):
-    payload_bytes = tarf.extractfile(tarinfo).read()
-    _, filename_ext = posixpath.splitext(tarinfo.name)
-    if filename_ext == ".gz":
-        payload_raw = gzip.decompress(payload_bytes)
-        filename, _ = posixpath.splitext(tarinfo.name)
-    else:
-        payload_raw = payload_bytes
-        filename = tarinfo.name
-
-    if "t" in mode:
-        payload = bytes.decode(payload_raw)
-    elif "b" in mode:
-        payload = payload_raw
-    else:
-        raise ValueError("mode must either contain 'b' or 't'.")
-
-    return filename, payload
-
-
 def add_idx_to_level_dtype(level_dtype):
     full_dtype = [(IDX, IDX_DTYPE)]
     for column_key_dtype in level_dtype:
         full_dtype.append(tuple(column_key_dtype))
     return full_dtype
-
-
-"""
-def reacarray_has_dtype(recarray, dtype):
-    pass
-
-
-
-class FileWriter:
-    def __init__(self, fileobj, mode, level_mode):
-        assert mode.startswith("w|")
-        assert level_mode.startswith("wb|")
-
-        self.fileobj = fileobj
-        self.mode = mode
-        self.level_mode = level_mode
-        self.tarf = tarfile.open(fileobj=self.fileobj, mode=self.mode)
-        self.level_dtypes = None
-        self.level_block_ids = {}
-
-    def write_level_dtypes(self, level_dtypes):
-        assert self.level_dtypes is None
-        self.level_dtypes = level_dtypes
-        tarf_write(
-            tarf=self.tarf,
-            filename="level_dtypes.json",
-            payload=json.dumps(level_dtypes, indent=4),
-            mode="wt",
-        )
-        for level_key in level_dtypes:
-            self.level_block_ids[level_key] = 0
-
-    def write_level_block(self, level_key, level_recarray):
-        assert level_key in self.level_dtypes
-        expected_level_dtype = add_idx_to_level_dtype(
-            self.level_dtypes[level_key]
-        )
-
-        block_filename = posixpath.join(
-            level_key, "{:06d}.rec".format(self.level_block_ids[level_key])
-        )
-        if "|gz" in self.level_mode:
-            block_filename += ".gz"
-
-        tarf_write(
-            tarf=self.tarf,
-            filename=block_filename,
-            payload=level_recarray.tobytes(),
-            mode=level_mode,
-        )
-
-        self.level_block_ids[level_key] += 1
-
-
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.close()
-
-    def close(self):
-        self.tarf.close()
-
-    def __repr__(self):
-        return "{}()".format(self.__class__.__name__)
-
-
-
-
-def concatenate(inpaths, outpath, work_dir=None):
-
-    with tempfile.TemporaryDirectory(suffix=None, prefix=None, dir=work_dir) as tmp:
-        tmp_path = os.path.join(tmp, "concatenate.tar")
-        with rename_after_writing.open(tmp_path, "wb") as fout:
-
-
-
-
-    rename_after_writing.move(tmp_path, outpath)
-"""

@@ -83,7 +83,7 @@ from .base import add_idx_to_level_dtype
 
 import pandas as pd
 import numpy as np
-import tarfile
+import sequential_tar
 import io
 import shutil
 import tempfile
@@ -323,16 +323,6 @@ def make_rectangular_DataFrame(table):
 # ============
 
 
-def _append_tar(tarfout, name, payload_bytes):
-    tarinfo = tarfile.TarInfo()
-    tarinfo.name = name
-    tarinfo.size = len(payload_bytes)
-    with io.BytesIO() as fileobj:
-        fileobj.write(payload_bytes)
-        fileobj.seek(0)
-        tarfout.addfile(tarinfo=tarinfo, fileobj=fileobj)
-
-
 def write(path, table, dtypes=None):
     """
     Writes the table to path.
@@ -353,17 +343,17 @@ def write(path, table, dtypes=None):
     if dtypes:
         testing.assert_table_has_dtypes(table=table, dtypes=dtypes)
 
-    with tarfile.open(path + ".tmp", "w") as tarfout:
+    with sequential_tar.open(name=path + ".tmp", mode="w") as tar:
         for level_key in table:
             assert IDX in table[level_key].dtype.names
             for column_key in table[level_key].dtype.names:
                 dtype_key = table[level_key].dtype[column_key].str
-                _append_tar(
-                    tarfout=tarfout,
+                tar.write(
                     name=FILEAME_TEMPLATE.format(
                         level_key, column_key, dtype_key
                     ),
-                    payload_bytes=table[level_key][column_key].tobytes(),
+                    payload=table[level_key][column_key].tobytes(),
+                    mode="wb",
                 )
     shutil.move(path + ".tmp", path)
 
@@ -388,14 +378,14 @@ def read(path, dtypes=None):
             table read has the provided dtypes.
     """
     out = {}
-    with tarfile.open(path, "r") as tarfin:
-        for tarinfo in tarfin:
+    with sequential_tar.open(name=path, mode="r") as tar:
+        for item in tar:
             level_key, column_key, dtype_key = _split_level_column_dtype(
-                path=tarinfo.name
+                path=item.name
             )
             if column_key == IDX:
                 assert dtype_key == IDX_DTYPE
-            level_column_bytes = tarfin.extractfile(tarinfo).read()
+            level_column_bytes = item.read(mode="rb")
             if level_key not in out:
                 out[level_key] = {}
             out[level_key][column_key] = np.frombuffer(

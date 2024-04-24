@@ -1,4 +1,4 @@
-import sparse_numeric_table as spt
+import sparse_numeric_table as snt
 import numpy as np
 import pandas as pd
 import tempfile
@@ -30,58 +30,58 @@ def test_from_records():
             table_records = {}
 
             table_records["A"] = []
-            table_records["A"].append({spt.IDX: i + 0, "a": rnd(), "b": rnd()})
-            table_records["A"].append({spt.IDX: i + 1, "a": rnd(), "b": rnd()})
-            table_records["A"].append({spt.IDX: i + 2, "a": rnd(), "b": rnd()})
-            table_records["A"].append({spt.IDX: i + 3, "a": rnd(), "b": rnd()})
-            table_records["A"].append({spt.IDX: i + 4, "a": rnd(), "b": rnd()})
+            table_records["A"].append({snt.IDX: i + 0, "a": rnd(), "b": rnd()})
+            table_records["A"].append({snt.IDX: i + 1, "a": rnd(), "b": rnd()})
+            table_records["A"].append({snt.IDX: i + 2, "a": rnd(), "b": rnd()})
+            table_records["A"].append({snt.IDX: i + 3, "a": rnd(), "b": rnd()})
+            table_records["A"].append({snt.IDX: i + 4, "a": rnd(), "b": rnd()})
 
             table_records["B"] = []
             table_records["B"].append(
-                {spt.IDX: i + 0, "c": rnd(), "d": 5 * rnd()}
+                {snt.IDX: i + 0, "c": rnd(), "d": 5 * rnd()}
             )
             table_records["B"].append(
-                {spt.IDX: i + 3, "c": rnd(), "d": 5 * rnd()}
+                {snt.IDX: i + 3, "c": rnd(), "d": 5 * rnd()}
             )
 
             table_records["C"] = []
             if rnd() > 0.9:
-                table_records["C"].append({spt.IDX: i + 3, "e": -rnd()})
+                table_records["C"].append({snt.IDX: i + 3, "e": -rnd()})
 
-            table = spt.table_of_records_to_sparse_numeric_table(
+            table = snt.table_of_records_to_sparse_numeric_table(
                 table_records=table_records, dtypes=dtypes
             )
 
             path = os.path.join(tmp, "{:06d}.tar".format(j))
             job_result_paths.append(path)
-            spt.write(path=path, table=table, dtypes=dtypes)
+            snt.write(path=path, table=table, dtypes=dtypes)
 
         # reduce
         # ------
-        full_table = spt.concatenate_files(
+        full_table = snt.concatenate_files(
             list_of_table_paths=job_result_paths, dtypes=dtypes
         )
 
-    spt.testing.assert_table_has_dtypes(table=full_table, dtypes=dtypes)
+    snt.testing.assert_table_has_dtypes(table=full_table, dtypes=dtypes)
 
 
 def test_write_read_full_table():
     prng = np.random.Generator(np.random.MT19937(seed=1337))
 
-    my_table = spt.testing.make_example_table(prng=prng, size=1000 * 1000)
-    my_table_dtypes = spt.testing.make_example_table_dtypes()
+    my_table = snt.testing.make_example_table(prng=prng, size=1000 * 1000)
+    my_table_dtypes = snt.testing.make_example_table_dtypes()
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "my_table.tar")
-        spt.write(path=path, table=my_table, dtypes=my_table_dtypes)
-        my_table_back = spt.read(path=path, dtypes=my_table_dtypes)
-        spt.testing.assert_tables_are_equal(my_table, my_table_back)
+        snt.write(path=path, table=my_table, dtypes=my_table_dtypes)
+        my_table_back = snt.read(path=path, dtypes=my_table_dtypes)
+        snt.testing.assert_tables_are_equal(my_table, my_table_back)
 
         # no dtypes
         path_nos = os.path.join(tmp, "my_table_no_dtypes.tar")
-        spt.write(path=path_nos, table=my_table)
-        my_table_back_nos = spt.read(path=path_nos)
-        spt.testing.assert_tables_are_equal(my_table, my_table_back_nos)
-        spt.testing.assert_table_has_dtypes(
+        snt.write(path=path_nos, table=my_table)
+        my_table_back_nos = snt.read(path=path_nos)
+        snt.testing.assert_tables_are_equal(my_table, my_table_back_nos)
+        snt.testing.assert_table_has_dtypes(
             table=my_table_back_nos, dtypes=my_table_dtypes
         )
 
@@ -89,20 +89,20 @@ def test_write_read_full_table():
 def test_write_read_empty_table():
     prng = np.random.Generator(np.random.MT19937(seed=1337))
 
-    empty_table = spt.testing.make_example_table(prng=prng, size=0)
-    empty_table_dtypes = spt.testing.make_example_table_dtypes()
+    empty_table = snt.testing.make_example_table(prng=prng, size=0)
+    empty_table_dtypes = snt.testing.make_example_table_dtypes()
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "my_empty_table.tar")
-        spt.write(path=path, table=empty_table, dtypes=empty_table_dtypes)
-        my_table_back = spt.read(path=path, dtypes=empty_table_dtypes)
-        spt.testing.assert_tables_are_equal(empty_table, my_table_back)
+        snt.write(path=path, table=empty_table, dtypes=empty_table_dtypes)
+        my_table_back = snt.read(path=path, dtypes=empty_table_dtypes)
+        snt.testing.assert_tables_are_equal(empty_table, my_table_back)
 
         # no dtypes
         path_nos = os.path.join(tmp, "my_empty_table_no_dtypes.tar")
-        spt.write(path=path_nos, table=empty_table)
-        my_table_back_nos = spt.read(path=path_nos)
-        spt.testing.assert_tables_are_equal(empty_table, my_table_back_nos)
-        spt.testing.assert_table_has_dtypes(
+        snt.write(path=path_nos, table=empty_table)
+        my_table_back_nos = snt.read(path=path_nos)
+        snt.testing.assert_tables_are_equal(empty_table, my_table_back_nos)
+        snt.testing.assert_table_has_dtypes(
             table=my_table_back_nos, dtypes=empty_table_dtypes
         )
 
@@ -110,34 +110,34 @@ def test_write_read_empty_table():
 def test_merge_common():
     prng = np.random.Generator(np.random.MT19937(seed=1337))
 
-    my_table = spt.testing.make_example_table(prng=prng, size=1000 * 1000)
+    my_table = snt.testing.make_example_table(prng=prng, size=1000 * 1000)
 
-    common_indices = spt.intersection(
-        [my_table[lvl][spt.IDX] for lvl in my_table]
+    common_indices = snt.intersection(
+        [my_table[lvl][snt.IDX] for lvl in my_table]
     )
 
-    my_common_table = spt.cut_table_on_indices(
+    my_common_table = snt.cut_table_on_indices(
         table=my_table, common_indices=common_indices
     )
-    my_sorted_common_table = spt.sort_table_on_common_indices(
+    my_sorted_common_table = snt.sort_table_on_common_indices(
         table=my_common_table, common_indices=common_indices
     )
 
     np.testing.assert_array_equal(
-        my_sorted_common_table["elementary_school"][spt.IDX],
-        my_sorted_common_table["high_school"][spt.IDX],
+        my_sorted_common_table["elementary_school"][snt.IDX],
+        my_sorted_common_table["high_school"][snt.IDX],
     )
 
     np.testing.assert_array_equal(
-        my_sorted_common_table["elementary_school"][spt.IDX],
-        my_sorted_common_table["university"][spt.IDX],
+        my_sorted_common_table["elementary_school"][snt.IDX],
+        my_sorted_common_table["university"][snt.IDX],
     )
 
-    my_common_df = spt.make_rectangular_DataFrame(table=my_sorted_common_table)
+    my_common_df = snt.make_rectangular_DataFrame(table=my_sorted_common_table)
 
     np.testing.assert_array_equal(
-        my_sorted_common_table["elementary_school"][spt.IDX],
-        my_common_df[spt.IDX],
+        my_sorted_common_table["elementary_school"][snt.IDX],
+        my_common_df[snt.IDX],
     )
 
 
@@ -145,15 +145,15 @@ def test_merge_across_all_levels_random_order_indices():
     prng = np.random.Generator(np.random.MT19937(seed=1337))
 
     size = 1000 * 1000
-    my_table = spt.testing.make_example_table(prng=prng, size=size)
+    my_table = snt.testing.make_example_table(prng=prng, size=size)
 
-    has_elementary_school = my_table["elementary_school"][spt.IDX]
-    has_high_school = my_table["high_school"][spt.IDX]
-    has_university = my_table["university"][spt.IDX]
-    has_big_lunchpack = my_table["elementary_school"][spt.IDX][
+    has_elementary_school = my_table["elementary_school"][snt.IDX]
+    has_high_school = my_table["high_school"][snt.IDX]
+    has_university = my_table["university"][snt.IDX]
+    has_big_lunchpack = my_table["elementary_school"][snt.IDX][
         my_table["elementary_school"]["lunchpack_size"] > 0.5
     ]
-    has_2best_friends = my_table["high_school"][spt.IDX][
+    has_2best_friends = my_table["high_school"][snt.IDX][
         my_table["high_school"]["num_best_friends"] >= 2
     ]
 
@@ -163,25 +163,25 @@ def test_merge_across_all_levels_random_order_indices():
     cut_indices = np.intersect1d(cut_indices, has_2best_friends)
     np.random.shuffle(cut_indices)
 
-    cut_table = spt.cut_table_on_indices(
+    cut_table = snt.cut_table_on_indices(
         table=my_table,
         common_indices=cut_indices,
         level_keys=["elementary_school", "high_school", "university"],
     )
-    sorted_cut_table = spt.sort_table_on_common_indices(
+    sorted_cut_table = snt.sort_table_on_common_indices(
         table=cut_table, common_indices=cut_indices
     )
 
     np.testing.assert_array_equal(
-        sorted_cut_table["elementary_school"][spt.IDX],
-        sorted_cut_table["high_school"][spt.IDX],
+        sorted_cut_table["elementary_school"][snt.IDX],
+        sorted_cut_table["high_school"][snt.IDX],
     )
     np.testing.assert_array_equal(
-        sorted_cut_table["elementary_school"][spt.IDX],
-        sorted_cut_table["university"][spt.IDX],
+        sorted_cut_table["elementary_school"][snt.IDX],
+        sorted_cut_table["university"][snt.IDX],
     )
     np.testing.assert_array_equal(
-        sorted_cut_table["elementary_school"][spt.IDX], cut_indices
+        sorted_cut_table["elementary_school"][snt.IDX], cut_indices
     )
 
 
@@ -189,14 +189,14 @@ def test_merge_random_order_indices():
     prng = np.random.Generator(np.random.MT19937(seed=1337))
 
     size = 1000 * 1000
-    my_table = spt.testing.make_example_table(prng=prng, size=size)
+    my_table = snt.testing.make_example_table(prng=prng, size=size)
 
-    has_elementary_school = my_table["elementary_school"][spt.IDX]
-    has_high_school = my_table["high_school"][spt.IDX]
-    has_big_lunchpack = my_table["elementary_school"][spt.IDX][
+    has_elementary_school = my_table["elementary_school"][snt.IDX]
+    has_high_school = my_table["high_school"][snt.IDX]
+    has_big_lunchpack = my_table["elementary_school"][snt.IDX][
         my_table["elementary_school"]["lunchpack_size"] > 0.5
     ]
-    has_2best_friends = my_table["high_school"][spt.IDX][
+    has_2best_friends = my_table["high_school"][snt.IDX][
         my_table["high_school"]["num_best_friends"] >= 2
     ]
 
@@ -205,12 +205,12 @@ def test_merge_random_order_indices():
     cut_indices = np.intersect1d(cut_indices, has_2best_friends)
     np.random.shuffle(cut_indices)
 
-    cut_table = spt.cut_table_on_indices(
+    cut_table = snt.cut_table_on_indices(
         table=my_table,
         common_indices=cut_indices,
         level_keys=["elementary_school", "high_school"],
     )
-    sorted_cut_table = spt.sort_table_on_common_indices(
+    sorted_cut_table = snt.sort_table_on_common_indices(
         table=cut_table, common_indices=cut_indices
     )
 
@@ -219,11 +219,11 @@ def test_merge_random_order_indices():
     assert "high_school" in sorted_cut_table
 
     np.testing.assert_array_equal(
-        sorted_cut_table["elementary_school"][spt.IDX],
-        sorted_cut_table["high_school"][spt.IDX],
+        sorted_cut_table["elementary_school"][snt.IDX],
+        sorted_cut_table["high_school"][snt.IDX],
     )
     np.testing.assert_array_equal(
-        sorted_cut_table["elementary_school"][spt.IDX], cut_indices
+        sorted_cut_table["elementary_school"][snt.IDX], cut_indices
     )
 
 
@@ -236,59 +236,59 @@ def test_concatenate_several_tables():
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         paths = []
         for i in range(num_blocks):
-            table_i = spt.testing.make_example_table(
+            table_i = snt.testing.make_example_table(
                 prng=prng, size=block_size, start_index=i * block_size
             )
-            table_i_dtypes = spt.testing.make_example_table_dtypes()
+            table_i_dtypes = snt.testing.make_example_table_dtypes()
             paths.append(os.path.join(tmp, "{:06d}.tar".format(i)))
-            spt.write(
+            snt.write(
                 path=paths[-1],
                 table=table_i,
                 dtypes=table_i_dtypes,
             )
         output_path = os.path.join(tmp, "full.tar")
-        full_table = spt.concatenate_files(
+        full_table = snt.concatenate_files(
             list_of_table_paths=paths,
             dtypes=table_i_dtypes,
         )
-    spt.testing.assert_table_has_dtypes(
+    snt.testing.assert_table_has_dtypes(
         table=full_table, dtypes=table_i_dtypes
     )
 
     assert (
-        full_table["elementary_school"][spt.IDX].shape[0]
+        full_table["elementary_school"][snt.IDX].shape[0]
         == num_blocks * block_size
     )
     assert (
-        len(set(full_table["elementary_school"][spt.IDX]))
+        len(set(full_table["elementary_school"][snt.IDX]))
         == num_blocks * block_size
     ), "The indices must be uniqe"
     assert (
-        full_table["high_school"][spt.IDX].shape[0]
+        full_table["high_school"][snt.IDX].shape[0]
         == num_blocks * block_size // 10
     )
     assert (
-        len(set(full_table["high_school"][spt.IDX]))
+        len(set(full_table["high_school"][snt.IDX]))
         == num_blocks * block_size // 10
     )
     assert (
-        full_table["university"][spt.IDX].shape[0]
+        full_table["university"][snt.IDX].shape[0]
         == num_blocks * block_size // 100
     )
     assert (
-        len(set(full_table["university"][spt.IDX]))
+        len(set(full_table["university"][snt.IDX]))
         == num_blocks * block_size // 100
     )
 
 
 def test_concatenate_empty_list_of_paths():
-    dtypes = spt.testing.make_example_table_dtypes()
+    dtypes = snt.testing.make_example_table_dtypes()
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         output_path = os.path.join(tmp, "empty_table.tar")
-        empty_table = spt.concatenate_files(
+        empty_table = snt.concatenate_files(
             list_of_table_paths=[], dtypes=dtypes
         )
-    assert empty_table["elementary_school"][spt.IDX].shape[0] == 0
+    assert empty_table["elementary_school"][snt.IDX].shape[0] == 0
 
 
 def test_only_index_in_level():
@@ -300,22 +300,22 @@ def test_only_index_in_level():
     }
 
     table = {}
-    table["A"] = spt.dict_to_recarray(
+    table["A"] = snt.dict_to_recarray(
         {
-            spt.IDX: np.arange(10).astype(spt.IDX_DTYPE),
+            snt.IDX: np.arange(10).astype(snt.IDX_DTYPE),
             "height": np.ones(10, dtype="<i8"),
         }
     )
-    table["B"] = spt.dict_to_recarray(
+    table["B"] = snt.dict_to_recarray(
         {
-            spt.IDX: prng.choice(table["A"][spt.IDX], 5),
+            snt.IDX: prng.choice(table["A"][snt.IDX], 5),
         }
     )
 
-    spt.testing.assert_table_has_dtypes(table=table, dtypes=dtypes)
+    snt.testing.assert_table_has_dtypes(table=table, dtypes=dtypes)
 
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "table_with_index_only_level.tar")
-        spt.write(path=path, table=table, dtypes=dtypes)
-        table_back = spt.read(path=path, dtypes=dtypes)
-        spt.testing.assert_tables_are_equal(table, table_back)
+        snt.write(path=path, table=table, dtypes=dtypes)
+        table_back = snt.read(path=path, dtypes=dtypes)
+        snt.testing.assert_tables_are_equal(table, table_back)

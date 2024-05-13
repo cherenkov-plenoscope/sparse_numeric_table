@@ -323,7 +323,7 @@ def make_rectangular_DataFrame(table):
 # ============
 
 
-def write(path, table, dtypes=None):
+def write(path, table):
     """
     Writes the table to path.
 
@@ -334,15 +334,7 @@ def write(path, table, dtypes=None):
 
     table : dict of recarrays
             The sparse table.
-
-    dtypes : dict (default: None)
-            The dtypes of the table. If provided it is asserted that the
-            table written has the provided dtypes.
     """
-
-    if dtypes:
-        testing.assert_table_has_dtypes(table=table, dtypes=dtypes)
-
     with sequential_tar.open(name=path + ".tmp", mode="w") as tar:
         for level_key in table:
             assert IDX in table[level_key].dtype.names
@@ -364,7 +356,7 @@ def _split_level_column_dtype(path):
     return level_key, column_key, dtype_key
 
 
-def read(path, dtypes=None, dynamic=True):
+def read(path, dynamic=True):
     """
     Returns table which is read from path.
 
@@ -394,9 +386,6 @@ def read(path, dtypes=None, dynamic=True):
         else:
             out[level_key] = level_recarray
 
-    if dtypes:
-        testing.assert_table_has_dtypes(table=out, dtypes=dtypes)
-
     return out
 
 
@@ -414,7 +403,8 @@ def concatenate_files(list_of_table_paths, dtypes):
 
     with tempfile.TemporaryDirectory(prefix="sparse_table_concatenate") as tmp:
         for part_table_path in list_of_table_paths:
-            part_table = read(path=part_table_path, dtypes=dtypes)
+            part_table = read(path=part_table_path)
+            testing.assert_table_has_dtypes(table=part_table, dtypes=dtypes)
             for level_key in dtypes:
                 with open(os.path.join(tmp, level_key), "ab") as fa:
                     fa.write(part_table[level_key].tobytes())

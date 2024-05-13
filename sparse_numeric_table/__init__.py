@@ -364,7 +364,7 @@ def _split_level_column_dtype(path):
     return level_key, column_key, dtype_key
 
 
-def read(path, dtypes=None):
+def read(path, dtypes=None, dynamic=True):
     """
     Returns table which is read from path.
 
@@ -372,10 +372,6 @@ def read(path, dtypes=None):
     ----------
     path : string
             Path to tape-archive in filesystem
-
-    dtypes : dict (default: None)
-            The dtypes of the table. If provided it is asserted that the
-            table read has the provided dtypes.
     """
     out = {}
     with sequential_tar.open(name=path, mode="r") as tar:
@@ -392,10 +388,15 @@ def read(path, dtypes=None):
                 level_column_bytes, dtype=dtype_key
             )
     for level_key in out:
-        out[level_key] = dict_to_recarray(out[level_key])
+        level_recarray = dict_to_recarray(out[level_key])
+        if dynamic:
+            out[level_key] = DynamicSizeRecarray(recarray=level_recarray)
+        else:
+            out[level_key] = level_recarray
 
     if dtypes:
         testing.assert_table_has_dtypes(table=out, dtypes=dtypes)
+
     return out
 
 

@@ -88,6 +88,7 @@ import io
 import shutil
 import tempfile
 import os
+import copy
 from dynamicsizerecarray import DynamicSizeRecarray
 
 
@@ -98,6 +99,17 @@ def init(dtypes):
         full_level_dtype = add_idx_to_level_dtype(dtypes[level_key])
         table[level_key] = DynamicSizeRecarray(dtype=full_level_dtype)
     return table
+
+
+def append(table_a, table_b):
+    """
+    Appends table_b to table_a.
+    """
+    table_a = to_dynamic(table_a, inplace=True)
+    table_add = to_static(table_b, inplace=False)
+    for level_key in table_a:
+        table_a[level_key].append_recarray(table_add[level_key])
+    return table_a
 
 
 def get_dtypes(table):
@@ -151,22 +163,32 @@ def _is_mode(table, mode):
 def to_static(table, inplace=False):
     if inplace:
         out = table
+        for level_key in table:
+            if isinstance(table[level_key], DynamicSizeRecarray):
+                out[level_key] = table[level_key].to_recarray()
     else:
         out = {}
-    for level_key in table:
-        if isinstance(table[level_key], DynamicSizeRecarray):
-            out[level_key] = table[level_key].to_recarray()
+        for level_key in table:
+            if isinstance(table[level_key], DynamicSizeRecarray):
+                out[level_key] = table[level_key].to_recarray()
+            else:
+                out[level_key] = copy.deepcopy(table[level_key])
     return out
 
 
 def to_dynamic(table, inplace=False):
     if inplace:
         out = table
+        for level_key in table:
+            if isinstance(table[level_key], np.recarray):
+                out[level_key] = DynamicSizeRecarray(recarray=table[level_key])
     else:
         out = {}
-    for level_key in table:
-        if isinstance(table[level_key], np.recarray):
-            out[level_key] = DynamicSizeRecarray(recarray=table[level_key])
+        for level_key in table:
+            if isinstance(table[level_key], np.recarray):
+                out[level_key] = DynamicSizeRecarray(recarray=table[level_key])
+            else:
+                out[level_key] = copy.deepcopy(table[level_key])
     return out
 
 
@@ -356,7 +378,7 @@ def _split_level_column_dtype(path):
     return level_key, column_key, dtype_key
 
 
-def read(path, dynamic=True):
+def read(path=None, fileobj=None, dynamic=True):
     """
     Returns table which is read from path.
 
@@ -366,7 +388,7 @@ def read(path, dynamic=True):
             Path to tape-archive in filesystem
     """
     out = {}
-    with sequential_tar.open(name=path, mode="r") as tar:
+    with sequential_tar.open(name=path, fileobj=fileobj, mode="r") as tar:
         for item in tar:
             level_key, column_key, dtype_key = _split_level_column_dtype(
                 path=item.name

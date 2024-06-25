@@ -196,6 +196,20 @@ def to_dynamic(table, inplace=False):
 # ==================
 
 
+def cut_on_common_indices(table, level_keys=None):
+    if level_keys is None:
+        level_keys = list(table.keys())
+
+    list_of_lists_of_indices = []
+    for level_key in level_keys:
+        list_of_lists_of_indices.append(table[level_key][IDX])
+    common_indices = intersection(list_of_lists_of_indices)
+
+    return cut_and_sort_table_on_indices(
+        table=table, common_indices=common_indices, level_keys=level_keys
+    )
+
+
 def intersection(list_of_lists_of_indices):
     """
     Returns the common indices among the lists of indices.

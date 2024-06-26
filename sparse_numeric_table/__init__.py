@@ -70,7 +70,7 @@ sparse tables
         |_ level_3/column_p
 """
 from .version import __version__
-from . import tarstream
+from . import archive
 from . import testing
 from .base import IDX
 from .base import IDX_DTYPE
@@ -80,6 +80,7 @@ from .base import DTYPES
 from .base import make_mask_of_right_in_left
 from .base import dict_to_recarray
 from .base import add_idx_to_level_dtype
+
 
 import pandas as pd
 import numpy as np

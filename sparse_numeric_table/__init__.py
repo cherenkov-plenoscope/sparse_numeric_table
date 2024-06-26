@@ -93,6 +93,15 @@ import copy
 from dynamicsizerecarray import DynamicSizeRecarray
 
 
+class SparseNumericTable:
+    def __init__(self, dtypes):
+        testing.assert_dtypes_keys_are_valid(dtypes=dtypes)
+        self.table = init(dtypes=dtypes)
+
+    def dtypes(self):
+        pass
+
+
 def init(dtypes):
     testing.assert_dtypes_keys_are_valid(dtypes=dtypes)
     table = {}

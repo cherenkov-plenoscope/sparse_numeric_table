@@ -7,12 +7,14 @@ import os
 def test_write_read_full_table():
     prng = np.random.Generator(np.random.MT19937(seed=1337))
 
-    my_table = snt.testing.make_example_table(prng=prng, size=100_000)
+    my_table = snt.testing.make_example_table(prng=prng, size=100_100)
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "my_table.zip")
 
-        with snt.archive.open(path, "w", block_size=10_000) as f:
-            f.write_table(my_table)
+        with snt.archive.open(
+            path, "w", dtypes=snt.get_dtypes(my_table), block_size=10_000
+        ) as f:
+            f.append_table(my_table)
 
         with snt.archive.open(path, "r") as f:
             my_table_back = f.read_table()
@@ -27,8 +29,10 @@ def test_read_only_part_of_table():
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "my_table.zip")
 
-        with snt.archive.open(path, "w", block_size=10_000) as f:
-            f.write_table(my_table)
+        with snt.archive.open(
+            path, "w", dtypes=snt.get_dtypes(my_table), block_size=10_000
+        ) as f:
+            f.append_table(my_table)
 
         with snt.archive.open(path, "r") as f:
             partly_back = f.read_table(

@@ -1,5 +1,6 @@
 from .base import IDX
 from .base import IDX_DTYPE
+from .base import add_idx_to_level_dtype
 
 import zipfile
 import numpy as np
@@ -9,40 +10,64 @@ import gzip
 import copy
 
 
-def open(file, mode="r", compress=False, block_size=1_000_000):
+def open(file, mode="r", dtypes=None, compress=False, block_size=262_144):
     if str.lower(mode) == "r":
         return Reader(file=file)
     elif str.lower(mode) == "w":
-        return Writer(file=file, compress=compress, block_size=block_size)
+        assert dtypes is not None, "mode='w' requires dtypes."
+        return Writer(
+            file=file, dtypes=dtypes, compress=compress, block_size=block_size
+        )
     else:
         raise KeyError(
             f"Expected 'mode' to be in ['r', 'w']. But it is '{mode:s}'"
         )
 
 
-class Writer:
-    def __init__(self, file, compress=False, block_size=1_000_000):
-        self.zipfile = zipfile.ZipFile(file=file, mode="w")
+class LevelBuffer:
+    def __init__(
+        self,
+        zipfile,
+        level_key,
+        level_dtype,
+        compress=False,
+        block_size=100_000,
+    ):
+        self.zipfile = zipfile
+        self.level_key = level_key
+        self.level_dtype = level_dtype
         self.gz = ".gz" if compress else ""
-        self.block_size = int(block_size)
+        self.block_size = block_size
         assert self.block_size > 0
+        self.block_id = 0
+        self.level = np.core.records.recarray(
+            shape=self.block_size,
+            dtype=self.level_dtype,
+        )
+        self.size = 0
 
-    def _write_level_block(self, level_block, level_key, block_id):
-        level_block_path = posixpath.join(level_key, f"{block_id:06d}")
+    def _append_level(self, level):
+        assert level.shape[0] <= self.block_size
 
-        for column_key in level_block.dtype.names:
-            column_dtype_key = level_block.dtype[column_key].str
-            path = posixpath.join(
-                level_block_path,
-                f"{column_key:s}.{column_dtype_key:s}{self.gz:s}",
-            )
-            with self.zipfile.open(path, mode="w") as fout:
-                payload = level_block[column_key].tobytes()
-                if self.gz:
-                    payload = gzip.compress(payload)
-                fout.write(payload)
+        new_size = self.size + level.shape[0]
 
-    def write_level(self, level, level_key):
+        if new_size <= self.block_size:
+            self.level[self.size : new_size] = level
+            self.size = new_size
+        else:
+            part_size = self.block_size - self.size
+            level_first_part = level[:part_size]
+            self.level[self.size : self.block_size] = level_first_part
+            self.size = self.block_size
+
+            self.flush()
+
+            level_second_part = level[part_size:]
+            new_size = self.size + level_second_part.shape[0]
+            self.level[self.size : new_size] = level_second_part
+            self.size = new_size
+
+    def append_level(self, level):
         block_steps = set(
             np.arange(start=0, stop=level.shape[0], step=self.block_size)
         )
@@ -51,22 +76,61 @@ class Writer:
         block_steps = np.array(block_steps)
         block_steps = sorted(block_steps)
 
-        for block_id in range(len(block_steps) - 1):
-            start = block_steps[block_id]
-            stop = block_steps[block_id + 1]
+        for i in range(len(block_steps) - 1):
+            start = block_steps[i]
+            stop = block_steps[i + 1]
             level_block = level[start:stop]
+            self._append_level(level=level_block)
 
-            self._write_level_block(
-                level_block=level_block,
-                level_key=level_key,
-                block_id=block_id,
+    def flush(self):
+        if self.size == 0:
+            return
+
+        level_block_path = posixpath.join(
+            self.level_key, f"{self.block_id:06d}"
+        )
+
+        for column_key in self.level.dtype.names:
+            column_dtype_key = self.level.dtype[column_key].str
+            path = posixpath.join(
+                level_block_path,
+                f"{column_key:s}.{column_dtype_key:s}{self.gz:s}",
+            )
+            with self.zipfile.open(path, mode="w") as fout:
+                payload = self.level[column_key][: self.size].tobytes()
+                if self.gz:
+                    payload = gzip.compress(payload)
+                fout.write(payload)
+
+        self.block_id += 1
+        self.size = 0
+
+
+class Writer:
+    def __init__(self, file, dtypes, compress, block_size):
+        self.zipfile = zipfile.ZipFile(file=file, mode="w")
+        self.compress = compress
+        self.block_size = block_size
+        self.dtypes = {}
+        for lk in dtypes:
+            self.dtypes[lk] = add_idx_to_level_dtype(dtypes[lk])
+        self.buffers = {}
+        for lk in self.dtypes:
+            self.buffers[lk] = LevelBuffer(
+                zipfile=self.zipfile,
+                level_key=lk,
+                level_dtype=self.dtypes[lk],
+                compress=self.compress,
+                block_size=self.block_size,
             )
 
-    def write_table(self, table):
-        for level_key in table:
-            self.write_level(level=table[level_key], level_key=level_key)
+    def append_table(self, table):
+        for lk in table:
+            self.buffers[lk].append_level(level=table[lk])
 
     def close(self):
+        for lk in self.buffers:
+            self.buffers[lk].flush()
         self.zipfile.close()
 
     def __enter__(self):

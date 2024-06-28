@@ -209,16 +209,25 @@ class Reader:
         for lk in levels_and_columns:
             out[lk] = []
 
-            if IDX not in levels_and_columns[lk]:
-                levels_and_columns[lk].insert(0, IDX)
+            if isinstance(levels_and_columns[lk], str):
+                if levels_and_columns[lk] == "__all__":
+                    out[lk] = self.dtypes[lk]
+                else:
+                    raise KeyError(
+                        "Expected column command to be in ['__all__']."
+                        f"But it is '{levels_and_columns[lk]:s}'."
+                    )
+            else:
+                if IDX not in levels_and_columns[lk]:
+                    levels_and_columns[lk].insert(0, IDX)
 
-            for ck in levels_and_columns[lk]:
-                dt = None
-                for item in self.dtypes[lk]:
-                    if item[0] == ck:
-                        dt = (ck, item[1])
-                assert dt is not None
-                out[lk].append(dt)
+                for ck in levels_and_columns[lk]:
+                    dt = None
+                    for item in self.dtypes[lk]:
+                        if item[0] == ck:
+                            dt = (ck, item[1])
+                    assert dt is not None
+                    out[lk].append(dt)
 
         return out
 

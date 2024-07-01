@@ -113,7 +113,15 @@ class Writer:
         self.block_size = block_size
         self.dtypes = {}
         for lk in dtypes:
-            self.dtypes[lk] = add_idx_to_level_dtype(dtypes[lk])
+            level_has_IDX = False
+            for ck in dtypes[lk]:
+                if ck[0] == IDX:
+                    level_has_IDX = True
+
+            if not level_has_IDX:
+                self.dtypes[lk] = add_idx_to_level_dtype(dtypes[lk])
+            else:
+                self.dtypes[lk] = dtypes[lk]
         self.buffers = {}
         for lk in self.dtypes:
             self.buffers[lk] = LevelBuffer(

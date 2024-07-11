@@ -34,29 +34,30 @@ def assert_tables_are_equal(table_a, table_b):
             )
 
 
-def assert_table_has_dtypes(table, dtypes):
-    for level_key in dtypes:
+def assert_dtypes_are_equal(a, b):
+    """
+    Parameters
+    ----------
+    a : dict of lists of tuples
+        The dtypes of table 'a'.
+    b : dict of lists of tuples
+        The dtypes of table 'b'.
+    """
+    for lkey in a:
         assert (
-            level_key in table
-        ), "Expected level '{:s}' in table, but it is not.".format(level_key)
+            lkey in b
+        ), f"Expected level key '{lkey:s}' from 'a' to be in 'b'."
 
-        for column in dtypes[level_key]:
-            column_key = column[0]
-            column_dtype = column[1]
-            assert column_key in table[level_key].dtype.names, (
-                "Expected column '{:s}' in table's level '{:s}', "
-                "but it is not.".format(column_key, level_key)
-            )
-            assert column_dtype == table[level_key].dtype[column_key], (
-                "Expected table[{level_key:s}][{column_key:s}].dtype "
-                "== {column_dtype:s}, "
-                "but actually it is {actual_dtype:s}".format(
-                    level_key=level_key,
-                    column_key=column_key,
-                    column_dtype=str(column_dtype),
-                    actual_dtype=str(table[level_key].dtype[column_key]),
-                )
-            )
+        assert len(a[lkey]) == len(
+            b[lkey]
+        ), f"Expected level '{lkey:s}' to have same number of columns in both 'a' and 'b'."
+
+        for i in range(len(a[lkey])):
+            acol = a[lkey][i]
+            bcol = b[lkey][i]
+
+            assert acol[0] == bcol[0], f"Expected columns to have same keys."
+            assert acol[1] == bcol[1], f"Expected columns to have same dtypes."
 
 
 def make_example_table_dtypes(index_dtype=("idx", "<u8")):
@@ -137,7 +138,7 @@ def make_example_table(prng, size, start_index=0, index_dtype=("idx", "<u8")):
         )
     )
     validating.assert_dtypes_are_valid(dtypes=example_table_dtypes)
-    assert_table_has_dtypes(table=t, dtypes=example_table_dtypes)
+    assert_dtypes_are_equal(a=t.dtypes, b=example_table_dtypes)
     return t
 
 

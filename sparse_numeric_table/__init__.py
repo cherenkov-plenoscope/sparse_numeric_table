@@ -174,7 +174,7 @@ def _split_level_column_dtype(path):
     return level_key, column_key, dtype_key
 
 
-def read(path=None, fileobj=None, dynamic=True):
+def read(path=None, fileobj=None):
     """
     Returns table which is read from path.
 
@@ -183,24 +183,24 @@ def read(path=None, fileobj=None, dynamic=True):
     path : string
             Path to tape-archive in filesystem
     """
-    out = {}
+    tmp = {}
     with sequential_tar.open(name=path, fileobj=fileobj, mode="r") as tar:
         for item in tar:
             level_key, column_key, dtype_key = _split_level_column_dtype(
                 path=item.name
             )
             level_column_bytes = item.read(mode="rb")
-            if level_key not in out:
-                out[level_key] = {}
-            out[level_key][column_key] = np.frombuffer(
+            if level_key not in tmp:
+                tmp[level_key] = {}
+            tmp[level_key][column_key] = np.frombuffer(
                 level_column_bytes, dtype=dtype_key
             )
-    for level_key in out:
-        level_recarray = dict_to_recarray(out[level_key])
-        if dynamic:
-            out[level_key] = DynamicSizeRecarray(recarray=level_recarray)
-        else:
-            out[level_key] = level_recarray
+
+    out = SparseNumericTable()
+    for level_key in list(tmp.keys()):
+        level_recarray = dict_to_recarray(tmp[level_key])
+        out[level_key] = DynamicSizeRecarray(recarray=level_recarray)
+        del tmp[level_key]
 
     return out
 
@@ -219,16 +219,16 @@ def concatenate_files(list_of_table_paths, dtypes):
     with tempfile.TemporaryDirectory(prefix="sparse_table_concatenate") as tmp:
         for part_table_path in list_of_table_paths:
             part_table = read(path=part_table_path)
-            testing.assert_table_has_dtypes(table=part_table, dtypes=dtypes)
+            testing.assert_dtypes_are_equal(part_table.dtypes, dtypes)
             for level_key in dtypes:
                 with open(os.path.join(tmp, level_key), "ab") as fa:
                     fa.write(part_table[level_key].tobytes())
 
-        out = {}
+        out = SparseNumericTable(dtypes=dtypes)
         for level_key in dtypes:
             with open(os.path.join(tmp, level_key), "rb") as f:
-                out[level_key] = np.frombuffer(
-                    f.read(), dtype=dtypes[level_key]
+                out[level_key].append_recarray(
+                    np.frombuffer(f.read(), dtype=dtypes[level_key])
                 )
 
     return out

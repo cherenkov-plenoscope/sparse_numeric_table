@@ -43,7 +43,7 @@ def test_from_records():
 
             path = os.path.join(tmp, "{:06d}.tar".format(j))
             job_result_paths.append(path)
-            snt.testing.assert_table_has_dtypes(table=db, dtypes=dtypes)
+            snt.testing.assert_dtypes_are_equal(a=db.dtypes, b=dtypes)
             snt.write(path=path, table=db)
 
         # reduce
@@ -52,7 +52,7 @@ def test_from_records():
             list_of_table_paths=job_result_paths, dtypes=dtypes
         )
 
-    snt.testing.assert_table_has_dtypes(table=full_table, dtypes=dtypes)
+    snt.testing.assert_dtypes_are_equal(a=full_table.dtypes, b=dtypes)
 
 
 def test_write_read_full_table():
@@ -62,13 +62,13 @@ def test_write_read_full_table():
     my_table_dtypes = snt.testing.make_example_table_dtypes()
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "my_table.tar")
-        snt.testing.assert_table_has_dtypes(
-            table=my_table, dtypes=my_table_dtypes
+        snt.testing.assert_dtypes_are_equal(
+            a=my_table.dtypes, b=my_table_dtypes
         )
         snt.write(path=path, table=my_table)
         my_table_back = snt.read(path=path)
-        snt.testing.assert_table_has_dtypes(
-            table=my_table_back, dtypes=my_table_dtypes
+        snt.testing.assert_dtypes_are_equal(
+            a=my_table_back.dtypes, b=my_table_dtypes
         )
         snt.testing.assert_tables_are_equal(my_table, my_table_back)
 
@@ -77,8 +77,8 @@ def test_write_read_full_table():
         snt.write(path=path_nos, table=my_table)
         my_table_back_nos = snt.read(path=path_nos)
         snt.testing.assert_tables_are_equal(my_table, my_table_back_nos)
-        snt.testing.assert_table_has_dtypes(
-            table=my_table_back_nos, dtypes=my_table_dtypes
+        snt.testing.assert_dtypes_are_equal(
+            my_table_back_nos.dtypes, my_table_dtypes
         )
 
 
@@ -89,13 +89,13 @@ def test_write_read_empty_table():
     empty_table_dtypes = snt.testing.make_example_table_dtypes()
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "my_empty_table.tar")
-        snt.testing.assert_table_has_dtypes(
-            table=empty_table, dtypes=empty_table_dtypes
+        snt.testing.assert_dtypes_are_equal(
+            empty_table.dtypes, empty_table_dtypes
         )
         snt.write(path=path, table=empty_table)
         my_table_back = snt.read(path=path)
-        snt.testing.assert_table_has_dtypes(
-            table=my_table_back, dtypes=empty_table_dtypes
+        snt.testing.assert_dtypes_are_equal(
+            my_table_back.dtypes, empty_table_dtypes
         )
         snt.testing.assert_tables_are_equal(empty_table, my_table_back)
 
@@ -104,8 +104,8 @@ def test_write_read_empty_table():
         snt.write(path=path_nos, table=empty_table)
         my_table_back_nos = snt.read(path=path_nos)
         snt.testing.assert_tables_are_equal(empty_table, my_table_back_nos)
-        snt.testing.assert_table_has_dtypes(
-            table=my_table_back_nos, dtypes=empty_table_dtypes
+        snt.testing.assert_dtypes_are_equal(
+            my_table_back_nos.dtypes, empty_table_dtypes
         )
 
 
@@ -270,9 +270,9 @@ def test_concatenate_several_tables():
             )
             table_i_dtypes = snt.testing.make_example_table_dtypes()
             paths.append(os.path.join(tmp, "{:06d}.tar".format(i)))
-            snt.testing.assert_table_has_dtypes(
-                table=table_i,
-                dtypes=table_i_dtypes,
+            snt.testing.assert_dtypes_are_equal(
+                table_i.dtypes,
+                table_i_dtypes,
             )
             snt.write(
                 path=paths[-1],
@@ -283,9 +283,7 @@ def test_concatenate_several_tables():
             list_of_table_paths=paths,
             dtypes=table_i_dtypes,
         )
-    snt.testing.assert_table_has_dtypes(
-        table=full_table, dtypes=table_i_dtypes
-    )
+    snt.testing.assert_dtypes_are_equal(full_table.dtypes, table_i_dtypes)
 
     assert (
         full_table["elementary_school"]["idx"].shape[0]
@@ -339,12 +337,12 @@ def test_only_index_in_level():
     for i in prng.choice(table["A"]["idx"], 5):
         table["B"].append_record({"idx": i})
 
-    snt.testing.assert_table_has_dtypes(table=table, dtypes=dtypes)
+    snt.testing.assert_dtypes_are_equal(table.dtypes, dtypes)
 
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "table_with_index_only_level.tar")
-        snt.testing.assert_table_has_dtypes(table=table, dtypes=dtypes)
+        snt.testing.assert_dtypes_are_equal(table.dtypes, dtypes)
         snt.write(path=path, table=table)
         table_back = snt.read(path=path)
-        snt.testing.assert_table_has_dtypes(table=table_back, dtypes=dtypes)
+        snt.testing.assert_dtypes_are_equal(table_back.dtypes, dtypes)
         snt.testing.assert_tables_are_equal(table, table_back)

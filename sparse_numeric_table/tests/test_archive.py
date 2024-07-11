@@ -26,7 +26,9 @@ def test_write_read_full_table():
 def test_read_only_part_of_table():
     prng = np.random.Generator(np.random.MT19937(seed=1337))
 
-    my_table = snt.testing.make_example_table(prng=prng, size=100_000)
+    my_table = snt.testing.make_example_table(
+        prng=prng, size=100_000, index_dtype=("idx", "<u8")
+    )
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "my_table.zip")
 
@@ -37,7 +39,9 @@ def test_read_only_part_of_table():
 
         with snt.archive.open(path, "r") as f:
             partly_back = f.read_table(
-                levels_and_columns={"elementary_school": ["num_friends"]}
+                levels_and_columns={
+                    "elementary_school": ["idx", "num_friends"]
+                }
             )
 
         np.testing.assert_array_equal(
@@ -45,8 +49,8 @@ def test_read_only_part_of_table():
             partly_back["elementary_school"]["num_friends"],
         )
         np.testing.assert_array_equal(
-            my_table["elementary_school"][snt.IDX],
-            partly_back["elementary_school"][snt.IDX],
+            my_table["elementary_school"]["idx"],
+            partly_back["elementary_school"]["idx"],
         )
 
 

@@ -72,14 +72,11 @@ sparse tables
 from .version import __version__
 from . import archive
 from . import testing
-from .base import IDX
-from .base import IDX_DTYPE
 from .base import LEVEL_COLUMN_DELIMITER
 from .base import FILEAME_TEMPLATE
 from .base import DTYPES
 from .base import make_mask_of_right_in_left
 from .base import dict_to_recarray
-from .base import add_idx_to_level_dtype
 
 
 import pandas as pd
@@ -93,12 +90,73 @@ import copy
 from dynamicsizerecarray import DynamicSizeRecarray
 
 
+class SparseNumericTable:
+    def __init__(self):
+        self._table = {}
+
+    def __setitem__(self, level_key, level_recarray):
+        lk = level_key
+        lr = level_recarray
+        testing._assert_key_is_valid(lk)
+
+        if isinstance(lr, DynamicSizeRecarray):
+            lr = lr
+        elif isinstance(lr, np.recarray):
+            lr = DynamicSizeRecarray(recarray=lr)
+        else:
+            raise ValueError("Expected DynamicSizeRecarray or np.recarray")
+        self._table[lk] = lr
+
+    def __getitem__(self, level_key):
+        return self._table[level_key]
+
+    def keys(self):
+        return self._table.keys()
+
+    def shrink_to_fit(self):
+        for lk in self._table:
+            self._table[lk].shrink_to_fit()
+
+    @property
+    def dtypes(self):
+        out = {}
+        for lk in self._table:
+            level_dtype = []
+            for ck in self._table[lk].dtype.names:
+                column_dtype = self._table[lk].dtype[ck].descr[0][1]
+                level_dtype.append((ck, column_dtype))
+            out[lk] = level_dtype
+        return out
+
+    @property
+    def shapes(self):
+        out = {}
+        for lk in self._table:
+            out[lk] = self._table[lk].shape
+        return out
+
+    def __repr__(self):
+        o = f"{self.__class__.__name__:s}"
+        o += f"()"
+        return o
+
+    def info(self):
+        out = io.StringIO()
+        out.write(self.__repr__())
+        out.write("\n")
+        for lk in self._table:
+            out.write(f"    {lk: <30s} ({self._table[lk].shape[0]: 9_d})\n")
+            for ck in self._table[lk].dtype.names:
+                out.write(f"        {ck:s}\n")
+        out.seek(0)
+        return out.read()
+
+
 def init(dtypes):
     testing.assert_dtypes_keys_are_valid(dtypes=dtypes)
     table = {}
     for level_key in dtypes:
-        full_level_dtype = add_idx_to_level_dtype(dtypes[level_key])
-        table[level_key] = DynamicSizeRecarray(dtype=full_level_dtype)
+        table[level_key] = DynamicSizeRecarray(dtype=dtypes[level_key])
     return table
 
 
@@ -118,8 +176,6 @@ def get_dtypes(table):
     for level_key in table:
         level_dtype = []
         for column_key in table[level_key].dtype.names:
-            if column_key == IDX:
-                continue
             column_dtype = table[level_key].dtype[column_key].descr[0][1]
             level_dtype.append((column_key, column_dtype))
         out[level_key] = level_dtype
@@ -197,13 +253,13 @@ def to_dynamic(table, inplace=False):
 # ==================
 
 
-def cut_on_common_indices(table, level_keys=None):
+def cut_on_common_indices(table, index_key, level_keys=None):
     if level_keys is None:
         level_keys = list(table.keys())
 
     list_of_lists_of_indices = []
     for level_key in level_keys:
-        list_of_lists_of_indices.append(table[level_key][IDX])
+        list_of_lists_of_indices.append(table[level_key][index_key])
     common_indices = intersection(list_of_lists_of_indices)
 
     return cut_and_sort_table_on_indices(
@@ -225,7 +281,7 @@ def intersection(list_of_lists_of_indices):
     return inter
 
 
-def cut_level_on_indices(level, indices, column_keys=None):
+def cut_level_on_indices(level, indices, index_key, column_keys=None):
     """
     Returns a level (recarray) only containing the row-indices in 'indices'.
 
@@ -240,7 +296,7 @@ def cut_level_on_indices(level, indices, column_keys=None):
     """
     if column_keys is None:
         column_keys = list(level.dtype.names)
-    column_keys.append(IDX)
+    column_keys.append(index_key)
     _part = {}
     for column_key in column_keys:
         _part[column_key] = level[column_key]
@@ -248,15 +304,15 @@ def cut_level_on_indices(level, indices, column_keys=None):
     del _part
     common_df = pd.merge(
         part_df,
-        pd.DataFrame(dict_to_recarray({IDX: indices})),
-        on=IDX,
+        pd.DataFrame(dict_to_recarray({index_key: indices})),
+        on=index_key,
         how="inner",
     )
     del part_df
     return common_df.to_records(index=False)
 
 
-def cut_table_on_indices(table, common_indices, level_keys=None):
+def cut_table_on_indices(table, common_indices, index_key, level_keys=None):
     """
     Returns table but only with the rows listed in common_indices.
 
@@ -277,11 +333,12 @@ def cut_table_on_indices(table, common_indices, level_keys=None):
         out[level_key] = cut_level_on_indices(
             level=table[level_key],
             indices=common_indices,
+            index_key=index_key,
         )
     return out
 
 
-def sort_table_on_common_indices(table, common_indices):
+def sort_table_on_common_indices(table, common_indices, index_key):
     """
     Returns a table with all row-indices ordered same as common_indices.
 
@@ -298,7 +355,7 @@ def sort_table_on_common_indices(table, common_indices):
     out = {}
     for level_key in table:
         level = table[level_key]
-        level_order_args = np.argsort(level[IDX])
+        level_order_args = np.argsort(level[index_key])
         level_sorted = level[level_order_args]
         del level_order_args
         level_same_order_as_common = level_sorted[common_inv_order]
@@ -331,22 +388,24 @@ def cut_and_sort_table_on_indices(table, common_indices, level_keys=None):
     return out
 
 
-def make_rectangular_DataFrame(table):
+def make_rectangular_DataFrame(table, index_key):
     """
     Returns a pandas.DataFrame made from a table.
     The table must already be rectangular, i.e. not sparse anymore.
     The row-indices among all levels in the table must have the same ordering.
     """
+    idx = index_key
+
     out = {}
     for level_key in table:
         for column_key in table[level_key].dtype.names:
-            if column_key == IDX:
-                if IDX in out:
+            if column_key == idx:
+                if idx in out:
                     np.testing.assert_array_equal(
-                        out[IDX], table[level_key][IDX]
+                        out[idx], table[level_key][idx]
                     )
                 else:
-                    out[IDX] = table[level_key][IDX]
+                    out[idx] = table[level_key][idx]
             else:
                 out[
                     "{:s}{:s}{:s}".format(
@@ -374,7 +433,6 @@ def write(path, table):
     """
     with sequential_tar.open(name=path + ".tmp", mode="w") as tar:
         for level_key in table:
-            assert IDX in table[level_key].dtype.names
             for column_key in table[level_key].dtype.names:
                 dtype_key = table[level_key].dtype[column_key].str
                 tar.write(
@@ -408,8 +466,6 @@ def read(path=None, fileobj=None, dynamic=True):
             level_key, column_key, dtype_key = _split_level_column_dtype(
                 path=item.name
             )
-            if column_key == IDX:
-                assert dtype_key == IDX_DTYPE
             level_column_bytes = item.read(mode="rb")
             if level_key not in out:
                 out[level_key] = {}
@@ -434,8 +490,7 @@ def concatenate_files(list_of_table_paths, dtypes):
     if len(list_of_table_paths) == 0:
         out = {}
         for level_key in dtypes:
-            full_level_dtype = add_idx_to_level_dtype(dtypes[level_key])
-            out[level_key] = np.frombuffer(b"", dtype=full_level_dtype)
+            out[level_key] = np.frombuffer(b"", dtype=dtypes[level_key])
         return out
 
     with tempfile.TemporaryDirectory(prefix="sparse_table_concatenate") as tmp:
@@ -449,9 +504,8 @@ def concatenate_files(list_of_table_paths, dtypes):
         out = {}
         for level_key in dtypes:
             with open(os.path.join(tmp, level_key), "rb") as f:
-                full_level_dtype = add_idx_to_level_dtype(dtypes[level_key])
                 out[level_key] = np.frombuffer(
-                    f.read(), dtype=full_level_dtype
+                    f.read(), dtype=dtypes[level_key]
                 )
 
     return out
@@ -462,8 +516,7 @@ def concatenate_files(list_of_table_paths, dtypes):
 
 
 def records_to_recarray(level_records, level_key, dtypes):
-    full_level_dtype = add_idx_to_level_dtype(dtypes[level_key])
-    out = DynamicSizeRecarray(dtype=full_level_dtype)
+    out = DynamicSizeRecarray(dtype=dtypes[level_key])
     out.append_records(records=level_records)
     return out.to_recarray()
 
@@ -485,17 +538,3 @@ def get_column_as_dict_by_index(table, level_key, column_key):
     for ii in range(level.shape[0]):
         out[level[IDX][ii]] = level[column_key][ii]
     return out
-
-
-# print
-# =====
-
-
-def list_size(table):
-    out = io.StringIO()
-    for level_key in table:
-        out.write(
-            "{: 9d} {: <30s}\n".format(table[level_key].shape[0], level_key)
-        )
-    out.seek(0)
-    return out.read()

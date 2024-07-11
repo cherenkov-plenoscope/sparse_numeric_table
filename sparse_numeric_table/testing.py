@@ -1,5 +1,3 @@
-from .base import IDX
-from .base import IDX_DTYPE
 from .base import DTYPES
 from .base import dict_to_recarray
 
@@ -39,19 +37,7 @@ def assert_table_has_dtypes(table, dtypes):
         assert (
             level_key in table
         ), "Expected level '{:s}' in table, but it is not.".format(level_key)
-        assert IDX in table[level_key].dtype.names, (
-            "Expected table[{:s}] to have column '{:s}', "
-            "but it has not.".format(level_key, IDX)
-        )
-        assert IDX_DTYPE == table[level_key].dtype[IDX], (
-            "Expected table[{:s}][{:s}].dtype == {:s}"
-            "but actually it is {:s}.".format(
-                level_key,
-                IDX,
-                str(IDX_DTYPE),
-                str(table[level_key].dtype[IDX]),
-            )
-        )
+
         for column in dtypes[level_key]:
             column_key = column[0]
             column_dtype = column[1]
@@ -105,7 +91,6 @@ def assert_dtypes_keys_are_valid(dtypes):
         for column in dtypes[level_key]:
             column_key = column[0]
             column_dtype = column[1]
-            assert IDX != column_key
             _assert_key_is_valid(column_key)
             assert column_dtype in DTYPES, (
                 "level: {:s}, column: {:s} has dtype: {:s} "
@@ -117,24 +102,27 @@ def assert_dtypes_keys_are_valid(dtypes):
             )
 
 
-def make_example_table_dtypes():
+def make_example_table_dtypes(index_dtype=("idx", "<u8")):
     return {
         "elementary_school": [
+            index_dtype,
             ("lunchpack_size", "<f8"),
             ("num_friends", "<i8"),
         ],
         "high_school": [
+            index_dtype,
             ("time_spent_on_homework", "<f8"),
             ("num_best_friends", "<i8"),
         ],
         "university": [
+            index_dtype,
             ("num_missed_classes", "<i8"),
             ("num_fellow_students", "<i8"),
         ],
     }
 
 
-def make_example_table(prng, size, start_index=0):
+def make_example_table(prng, size, start_index=0, index_dtype=("idx", "<u8")):
     """
     Children start in elementary school. 10% progress to high school, and 10%
     of those progress to university.
@@ -142,13 +130,15 @@ def make_example_table(prng, size, start_index=0):
     columns, while every child is represented by a line.
     Unfortunately, a typical example of a sparse table.
     """
+    idx = index_dtype[0]
+    idx_dtype = index_dtype[1]
 
-    example_table_dtypes = make_example_table_dtypes()
+    example_table_dtypes = make_example_table_dtypes(index_dtype=index_dtype)
 
     t = {}
     t["elementary_school"] = dict_to_recarray(
         {
-            IDX: start_index + np.arange(size).astype(IDX_DTYPE),
+            idx: start_index + np.arange(size).astype(idx_dtype),
             "lunchpack_size": prng.uniform(size=size).astype("<f8"),
             "num_friends": prng.uniform(low=0, high=5, size=size).astype(
                 "<i8"
@@ -158,8 +148,8 @@ def make_example_table(prng, size, start_index=0):
     high_school_size = size // 10
     t["high_school"] = dict_to_recarray(
         {
-            IDX: prng.choice(
-                t["elementary_school"][IDX],
+            idx: prng.choice(
+                t["elementary_school"][idx],
                 size=high_school_size,
                 replace=False,
             ),
@@ -173,8 +163,8 @@ def make_example_table(prng, size, start_index=0):
     university_size = high_school_size // 10
     t["university"] = dict_to_recarray(
         {
-            IDX: prng.choice(
-                t["high_school"][IDX], size=university_size, replace=False
+            idx: prng.choice(
+                t["high_school"][idx], size=university_size, replace=False
             ),
             "num_missed_classes": 100
             * prng.uniform(size=university_size).astype("<i8"),

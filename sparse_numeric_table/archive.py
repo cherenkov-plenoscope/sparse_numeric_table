@@ -1,7 +1,3 @@
-from .base import IDX
-from .base import IDX_DTYPE
-from .base import add_idx_to_level_dtype
-
 import zipfile
 import numpy as np
 import posixpath
@@ -111,17 +107,7 @@ class Writer:
         self.zipfile = zipfile.ZipFile(file=file, mode="w")
         self.compress = compress
         self.block_size = block_size
-        self.dtypes = {}
-        for lk in dtypes:
-            level_has_IDX = False
-            for ck in dtypes[lk]:
-                if ck[0] == IDX:
-                    level_has_IDX = True
-
-            if not level_has_IDX:
-                self.dtypes[lk] = add_idx_to_level_dtype(dtypes[lk])
-            else:
-                self.dtypes[lk] = dtypes[lk]
+        self.dtypes = dtypes
         self.buffers = {}
         for lk in self.dtypes:
             self.buffers[lk] = LevelBuffer(
@@ -226,9 +212,6 @@ class Reader:
                         f"But it is '{levels_and_columns[lk]:s}'."
                     )
             else:
-                if IDX not in levels_and_columns[lk]:
-                    levels_and_columns[lk].insert(0, IDX)
-
                 for ck in levels_and_columns[lk]:
                     dt = None
                     for item in self.dtypes[lk]:

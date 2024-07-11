@@ -1,5 +1,7 @@
-from .base import DTYPES
 from .base import dict_to_recarray
+from .base import SparseNumericTable
+
+from . import validating
 
 import numpy as np
 
@@ -57,51 +59,6 @@ def assert_table_has_dtypes(table, dtypes):
             )
 
 
-def _assert_no_whitespace(key):
-    for char in key:
-        assert not str.isspace(
-            char
-        ), "Key must not contain spaces, but key = '{:s}'".format(key)
-
-
-def _assert_no_dot(key):
-    assert "." not in key, "Key must not contain '.', but key = '{:s}'".format(
-        key
-    )
-
-
-def _assert_no_directory_delimeter(key):
-    assert "/" not in key, "Key must not contain '/', but key = '{:s}'".format(
-        key
-    )
-    assert (
-        "\\" not in key
-    ), "Key must not contain '\\', but key = '{:s}'".format(key)
-
-
-def _assert_key_is_valid(key):
-    _assert_no_whitespace(key)
-    _assert_no_dot(key)
-    _assert_no_directory_delimeter(key)
-
-
-def assert_dtypes_keys_are_valid(dtypes):
-    for level_key in dtypes:
-        _assert_key_is_valid(level_key)
-        for column in dtypes[level_key]:
-            column_key = column[0]
-            column_dtype = column[1]
-            _assert_key_is_valid(column_key)
-            assert column_dtype in DTYPES, (
-                "level: {:s}, column: {:s} has dtype: {:s} "
-                "which is not a valid for sparse_numeric_table.".format(
-                    level_key,
-                    column_key,
-                    str(column_dtype),
-                )
-            )
-
-
 def make_example_table_dtypes(index_dtype=("idx", "<u8")):
     return {
         "elementary_school": [
@@ -135,45 +92,51 @@ def make_example_table(prng, size, start_index=0, index_dtype=("idx", "<u8")):
 
     example_table_dtypes = make_example_table_dtypes(index_dtype=index_dtype)
 
-    t = {}
-    t["elementary_school"] = dict_to_recarray(
-        {
-            idx: start_index + np.arange(size).astype(idx_dtype),
-            "lunchpack_size": prng.uniform(size=size).astype("<f8"),
-            "num_friends": prng.uniform(low=0, high=5, size=size).astype(
-                "<i8"
-            ),
-        }
+    t = SparseNumericTable(dtypes=example_table_dtypes)
+    t["elementary_school"].append_recarray(
+        dict_to_recarray(
+            {
+                idx: start_index + np.arange(size).astype(idx_dtype),
+                "lunchpack_size": prng.uniform(size=size).astype("<f8"),
+                "num_friends": prng.uniform(low=0, high=5, size=size).astype(
+                    "<i8"
+                ),
+            }
+        )
     )
     high_school_size = size // 10
-    t["high_school"] = dict_to_recarray(
-        {
-            idx: prng.choice(
-                t["elementary_school"][idx],
-                size=high_school_size,
-                replace=False,
-            ),
-            "time_spent_on_homework": 100
-            + 100 * prng.uniform(size=high_school_size).astype("<f8"),
-            "num_best_friends": prng.uniform(
-                low=0, high=5, size=high_school_size
-            ).astype("<i8"),
-        }
+    t["high_school"].append_recarray(
+        dict_to_recarray(
+            {
+                idx: prng.choice(
+                    t["elementary_school"][idx],
+                    size=high_school_size,
+                    replace=False,
+                ),
+                "time_spent_on_homework": 100
+                + 100 * prng.uniform(size=high_school_size).astype("<f8"),
+                "num_best_friends": prng.uniform(
+                    low=0, high=5, size=high_school_size
+                ).astype("<i8"),
+            }
+        )
     )
     university_size = high_school_size // 10
-    t["university"] = dict_to_recarray(
-        {
-            idx: prng.choice(
-                t["high_school"][idx], size=university_size, replace=False
-            ),
-            "num_missed_classes": 100
-            * prng.uniform(size=university_size).astype("<i8"),
-            "num_fellow_students": prng.uniform(
-                low=0, high=5, size=university_size
-            ).astype("<i8"),
-        }
+    t["university"].append_recarray(
+        dict_to_recarray(
+            {
+                idx: prng.choice(
+                    t["high_school"][idx], size=university_size, replace=False
+                ),
+                "num_missed_classes": 100
+                * prng.uniform(size=university_size).astype("<i8"),
+                "num_fellow_students": prng.uniform(
+                    low=0, high=5, size=university_size
+                ).astype("<i8"),
+            }
+        )
     )
-    assert_dtypes_keys_are_valid(dtypes=example_table_dtypes)
+    validating.assert_dtypes_are_valid(dtypes=example_table_dtypes)
     assert_table_has_dtypes(table=t, dtypes=example_table_dtypes)
     return t
 

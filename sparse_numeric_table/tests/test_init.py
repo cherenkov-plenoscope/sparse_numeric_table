@@ -27,31 +27,24 @@ def test_from_records():
             # map the population of the sparse table onto many jobs
             # -----------------------------------------------------
             i = j * n
-            table_records = {}
+            db = snt.SparseNumericTable(dtypes=dtypes)
 
-            table_records["A"] = []
-            table_records["A"].append({"i": i + 0, "a": rnd(), "b": rnd()})
-            table_records["A"].append({"i": i + 1, "a": rnd(), "b": rnd()})
-            table_records["A"].append({"i": i + 2, "a": rnd(), "b": rnd()})
-            table_records["A"].append({"i": i + 3, "a": rnd(), "b": rnd()})
-            table_records["A"].append({"i": i + 4, "a": rnd(), "b": rnd()})
+            db["A"].append_record({"i": i + 0, "a": rnd(), "b": rnd()})
+            db["A"].append_record({"i": i + 1, "a": rnd(), "b": rnd()})
+            db["A"].append_record({"i": i + 2, "a": rnd(), "b": rnd()})
+            db["A"].append_record({"i": i + 3, "a": rnd(), "b": rnd()})
+            db["A"].append_record({"i": i + 4, "a": rnd(), "b": rnd()})
 
-            table_records["B"] = []
-            table_records["B"].append({"i": i + 0, "c": rnd(), "d": 5 * rnd()})
-            table_records["B"].append({"i": i + 3, "c": rnd(), "d": 5 * rnd()})
+            db["B"].append_record({"i": i + 0, "c": rnd(), "d": 5 * rnd()})
+            db["B"].append_record({"i": i + 3, "c": rnd(), "d": 5 * rnd()})
 
-            table_records["C"] = []
             if rnd() > 0.9:
-                table_records["C"].append({"i": i + 3, "e": -rnd()})
-
-            table = snt.table_of_records_to_sparse_numeric_table(
-                table_records=table_records, dtypes=dtypes
-            )
+                db["C"].append_record({"i": i + 3, "e": -rnd()})
 
             path = os.path.join(tmp, "{:06d}.tar".format(j))
             job_result_paths.append(path)
-            snt.testing.assert_table_has_dtypes(table=table, dtypes=dtypes)
-            snt.write(path=path, table=table)
+            snt.testing.assert_table_has_dtypes(table=db, dtypes=dtypes)
+            snt.write(path=path, table=db)
 
         # reduce
         # ------
@@ -124,14 +117,16 @@ def test_merge_common():
         prng=prng, size=1000 * 1000, index_dtype=index_dtype
     )
 
-    common_indices = snt.intersection([my_table[lvl]["i"] for lvl in my_table])
+    common_indices = snt.logic.intersection(
+        [my_table[lvl]["i"] for lvl in my_table]
+    )
 
-    my_common_table = snt.cut_table_on_indices(
+    my_common_table = snt.logic.cut_table_on_indices(
         table=my_table,
         common_indices=common_indices,
         index_key="i",
     )
-    my_sorted_common_table = snt.sort_table_on_common_indices(
+    my_sorted_common_table = snt.logic.sort_table_on_common_indices(
         table=my_common_table,
         common_indices=common_indices,
         index_key="i",
@@ -147,7 +142,7 @@ def test_merge_common():
         my_sorted_common_table["university"]["i"],
     )
 
-    my_common_df = snt.make_rectangular_DataFrame(
+    my_common_df = snt.logic.make_rectangular_DataFrame(
         table=my_sorted_common_table,
         index_key="i",
     )
@@ -183,13 +178,13 @@ def test_merge_across_all_levels_random_order_indices():
     cut_indices = np.intersect1d(cut_indices, has_2best_friends)
     np.random.shuffle(cut_indices)
 
-    cut_table = snt.cut_table_on_indices(
+    cut_table = snt.logic.cut_table_on_indices(
         table=my_table,
         common_indices=cut_indices,
         index_key="i",
         level_keys=["elementary_school", "high_school", "university"],
     )
-    sorted_cut_table = snt.sort_table_on_common_indices(
+    sorted_cut_table = snt.logic.sort_table_on_common_indices(
         table=cut_table,
         common_indices=cut_indices,
         index_key="i",
@@ -231,13 +226,13 @@ def test_merge_random_order_indices():
     cut_indices = np.intersect1d(cut_indices, has_2best_friends)
     np.random.shuffle(cut_indices)
 
-    cut_table = snt.cut_table_on_indices(
+    cut_table = snt.logic.cut_table_on_indices(
         table=my_table,
         common_indices=cut_indices,
         level_keys=["elementary_school", "high_school"],
         index_key="idx",
     )
-    sorted_cut_table = snt.sort_table_on_common_indices(
+    sorted_cut_table = snt.logic.sort_table_on_common_indices(
         table=cut_table,
         common_indices=cut_indices,
         index_key="idx",
@@ -333,23 +328,16 @@ def test_only_index_in_level():
 
     dtypes = {
         "A": [("idx", "<u8"), ("height", "<i8")],
-        "B": [
-            ("idx", "<u8"),
-        ],
+        "B": [("idx", "<u8")],
     }
 
-    table = {}
-    table["A"] = snt.dict_to_recarray(
-        {
-            "idx": np.arange(10).astype("<u8"),
-            "height": np.ones(10, dtype="<i8"),
-        }
-    )
-    table["B"] = snt.dict_to_recarray(
-        {
-            "idx": prng.choice(table["A"]["idx"], 5),
-        }
-    )
+    table = snt.SparseNumericTable(dtypes=dtypes)
+
+    for i in np.arange(10):
+        table["A"].append_record({"idx": i, "height": 10})
+
+    for i in prng.choice(table["A"]["idx"], 5):
+        table["B"].append_record({"idx": i})
 
     snt.testing.assert_table_has_dtypes(table=table, dtypes=dtypes)
 

@@ -5,6 +5,8 @@ import dynamicsizerecarray
 import gzip
 import copy
 
+from .base import SparseNumericTable
+
 
 def open(file, mode="r", dtypes=None, compress=False, block_size=262_144):
     if str.lower(mode) == "r":
@@ -223,18 +225,24 @@ class Reader:
         return out
 
     def read_table(self, levels_and_columns=None):
-        sub_dtyes = self._sub_dtypes(levels_and_columns=levels_and_columns)
+        sub_dtypes = self._sub_dtypes(levels_and_columns=levels_and_columns)
 
-        out = {}
-        for lk in sub_dtyes:
-            level_dtype = copy.deepcopy(sub_dtyes[lk])
+        out = SparseNumericTable()
+        for lk in sub_dtypes:
+            level_dtype = copy.deepcopy(sub_dtypes[lk])
             first_dtype = level_dtype.pop(0)
             ck = first_dtype[0]
             first_column = self.read_column(level_key=lk, column_key=ck)
-            out[lk] = np.core.records.recarray(
+
+            _tmp_rec = np.core.records.recarray(
                 shape=first_column.shape[0],
-                dtype=sub_dtyes[lk],
+                dtype=sub_dtypes[lk],
             )
+
+            out[lk] = dynamicsizerecarray.DynamicSizeRecarray(
+                recarray=_tmp_rec
+            )
+
             out[lk][ck] = first_column
 
             for next_dtype in level_dtype:
@@ -242,6 +250,7 @@ class Reader:
                 next_column = self.read_column(level_key=lk, column_key=ck)
                 out[lk][ck] = next_column
 
+        out.shrink_to_fit()
         return out
 
     def close(self):

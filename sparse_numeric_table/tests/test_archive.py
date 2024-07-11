@@ -13,7 +13,7 @@ def test_write_read_full_table():
         path = os.path.join(tmp, "my_table.zip")
 
         with snt.archive.open(
-            path, "w", dtypes=snt.get_dtypes(my_table), block_size=10_000
+            path, "w", dtypes=my_table.dtypes, block_size=10_000
         ) as f:
             f.append_table(my_table)
 
@@ -33,7 +33,7 @@ def test_read_only_part_of_table():
         path = os.path.join(tmp, "my_table.zip")
 
         with snt.archive.open(
-            path, "w", dtypes=snt.get_dtypes(my_table), block_size=10_000
+            path, "w", dtypes=my_table.dtypes, block_size=10_000
         ) as f:
             f.append_table(my_table)
 
@@ -62,7 +62,7 @@ def test_column_commnad():
         path = os.path.join(tmp, "my_table.zip")
 
         with snt.archive.open(
-            path, "w", dtypes=snt.get_dtypes(my_table), block_size=10_000
+            path, "w", dtypes=my_table.dtypes, block_size=10_000
         ) as f:
             f.append_table(my_table)
 

@@ -13,6 +13,12 @@ DTYPES = [
 ]
 
 
+def _assert_starts_not_with_dunderscore(key):
+    assert not str.startswith(
+        key, "__"
+    ), "Key must not start with double underscoe '__'."
+
+
 def _assert_no_whitespace(key):
     for char in key:
         assert not str.isspace(
@@ -36,6 +42,7 @@ def _assert_no_directory_delimeter(key):
 
 
 def assert_key_is_valid(key):
+    _assert_starts_not_with_dunderscore(key)
     _assert_no_whitespace(key)
     _assert_no_dot(key)
     _assert_no_directory_delimeter(key)
@@ -44,15 +51,10 @@ def assert_key_is_valid(key):
 def assert_dtypes_are_valid(dtypes):
     for level_key in dtypes:
         assert_key_is_valid(level_key)
-        for column in dtypes[level_key]:
-            column_key = column[0]
-            column_dtype = column[1]
+        for column_key, column_dtype in dtypes[level_key]:
             assert_key_is_valid(column_key)
             assert column_dtype in DTYPES, (
-                "level: {:s}, column: {:s} has dtype: {:s} "
-                "which is not a valid for sparse_numeric_table.".format(
-                    level_key,
-                    column_key,
-                    str(column_dtype),
-                )
+                f"Level: {level_key:s}, column: {column_key:s} "
+                f"has dtype: {column_dtype:s} which is not a valid "
+                "for sparse_numeric_table."
             )

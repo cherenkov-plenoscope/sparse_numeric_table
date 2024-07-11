@@ -105,36 +105,6 @@ def append(table_a, table_b):
     return table_a
 
 
-"""
-def init(dtypes):
-    testing.assert_dtypes_keys_are_valid(dtypes=dtypes)
-    table = {}
-    for level_key in dtypes:
-        table[level_key] = DynamicSizeRecarray(dtype=dtypes[level_key])
-    return table
-
-
-
-
-
-def get_dtypes(table):
-    out = {}
-    for level_key in table:
-        level_dtype = []
-        for column_key in table[level_key].dtype.names:
-            column_dtype = table[level_key].dtype[column_key].descr[0][1]
-            level_dtype.append((column_key, column_dtype))
-        out[level_key] = level_dtype
-    return out
-
-
-def get_sizes(table):
-    out = {}
-    for level_key in table:
-        out[level_key] = table[level_key].shape[0]
-    return out
-"""
-
 # input output
 # ============
 

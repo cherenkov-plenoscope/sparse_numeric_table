@@ -6,19 +6,21 @@ from . import validating
 import numpy as np
 
 
-def _assert_same_keys(keys_a, keys_b):
+def assert_lists_have_same_items_regardless_of_order(keys_a, keys_b):
     """
     Asserts that two lists contain the same items, but order does not matter.
     """
     uni_keys = list(set(keys_a + keys_b))
     for key in uni_keys:
-        assert key in keys_a and key in keys_b, "Key: {:s}".format(key)
+        assert key in keys_a and key in keys_b, f"Key: {key:s}"
 
 
 def assert_tables_are_equal(table_a, table_b):
-    _assert_same_keys(list(table_a.keys()), list(table_b.keys()))
+    assert_lists_have_same_items_regardless_of_order(
+        list(table_a.keys()), list(table_b.keys())
+    )
     for level_key in table_a:
-        _assert_same_keys(
+        assert_lists_have_same_items_regardless_of_order(
             table_a[level_key].dtype.names, table_b[level_key].dtype.names
         )
         for column_key in table_a[level_key].dtype.names:
@@ -29,7 +31,7 @@ def assert_tables_are_equal(table_a, table_b):
             np.testing.assert_array_equal(
                 x=table_a[level_key][column_key],
                 y=table_b[level_key][column_key],
-                err_msg="table[{:s}][{:s}]".format(level_key, column_key),
+                err_msg=f"table[{level_key:s}][{column_key:s}]",
                 verbose=True,
             )
 
@@ -48,9 +50,10 @@ def assert_dtypes_are_equal(a, b):
             lkey in b
         ), f"Expected level key '{lkey:s}' from 'a' to be in 'b'."
 
-        assert len(a[lkey]) == len(
-            b[lkey]
-        ), f"Expected level '{lkey:s}' to have same number of columns in both 'a' and 'b'."
+        assert len(a[lkey]) == len(b[lkey]), (
+            f"Expected level '{lkey:s}' to have same number of columns in both"
+            "'a' and 'b'."
+        )
 
         for i in range(len(a[lkey])):
             acol = a[lkey][i]
@@ -143,7 +146,9 @@ def make_example_table(prng, size, start_index=0, index_dtype=("idx", "<u8")):
 
 
 def assert_dtypes_equal(a, b):
-    _assert_same_keys(list(b.keys()), list(b.keys()))
+    assert_lists_have_same_items_regardless_of_order(
+        list(b.keys()), list(b.keys())
+    )
     for level_key in a:
         alvl = a[level_key]
         blvl = b[level_key]

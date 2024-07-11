@@ -234,13 +234,9 @@ class Reader:
             ck = first_dtype[0]
             first_column = self.read_column(level_key=lk, column_key=ck)
 
-            _tmp_rec = np.core.records.recarray(
-                shape=first_column.shape[0],
-                dtype=sub_dtypes[lk],
-            )
-
             out[lk] = dynamicsizerecarray.DynamicSizeRecarray(
-                recarray=_tmp_rec
+                dtype=sub_dtypes[lk],
+                shape=first_column.shape[0],
             )
 
             out[lk][ck] = first_column

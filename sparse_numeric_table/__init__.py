@@ -91,8 +91,11 @@ from dynamicsizerecarray import DynamicSizeRecarray
 
 
 class SparseNumericTable:
-    def __init__(self):
-        self._table = {}
+    def __init__(self, dtypes=None):
+        if dtypes is None:
+            self._table = {}
+        else:
+            self._table = _init_tables_from_dtypes(dtypes=dtypes)
 
     def __setitem__(self, level_key, level_recarray):
         lk = level_key
@@ -538,3 +541,11 @@ def get_column_as_dict_by_index(table, level_key, column_key):
     for ii in range(level.shape[0]):
         out[level[IDX][ii]] = level[column_key][ii]
     return out
+
+
+def _init_tables_from_dtypes(dtypes):
+    testing.assert_dtypes_keys_are_valid(dtypes=dtypes)
+    tables = {}
+    for level_key in dtypes:
+        tables[level_key] = DynamicSizeRecarray(dtype=dtypes[level_key])
+    return tables

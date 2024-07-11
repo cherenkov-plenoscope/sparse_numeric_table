@@ -68,9 +68,11 @@ class SparseNumericTable:
         out.write(self.__repr__())
         out.write("\n")
         for lk in self._table:
-            out.write(f"    {lk: <30s} ({self._table[lk].shape[0]: 9_d})\n")
+            pad_key = f"    {lk:s} "
+            out.write(f"{pad_key:_<45s}[ {self._table[lk].shape[0]: 9_d} ]_\n")
             for ck in self._table[lk].dtype.names:
-                out.write(f"        {ck:s}\n")
+                cd = self._table[lk].dtype[ck].str
+                out.write(f"        {ck:.<45s} {cd:s}\n")
         out.seek(0)
         return out.read()
 

@@ -2,7 +2,6 @@ import sparse_numeric_table as snt
 import numpy as np
 
 
-
 def test_dtypes():
     prng = np.random.Generator(np.random.MT19937(seed=1337))
     table = snt.testing.make_example_table(prng=prng, size=1000)
@@ -40,4 +39,3 @@ def test_repr():
     txt = repr(table)
     assert txt
     assert "SparseNumericTable" in txt
-

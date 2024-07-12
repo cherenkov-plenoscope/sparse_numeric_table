@@ -16,29 +16,23 @@ DTYPES = [
 def _assert_starts_not_with_dunderscore(key):
     assert not str.startswith(
         key, "__"
-    ), "Key must not start with double underscoe '__'."
+    ), f"Key must not start with double underscoe '__', but key = '{key:s}'."
 
 
 def _assert_no_whitespace(key):
     for char in key:
         assert not str.isspace(
             char
-        ), "Key must not contain spaces, but key = '{:s}'".format(key)
+        ), f"Key must not contain spaces, but key = '{key:s}'."
 
 
 def _assert_no_dot(key):
-    assert "." not in key, "Key must not contain '.', but key = '{:s}'".format(
-        key
-    )
+    assert "." not in key, f"Key must not contain '.', but key = '{key:s}'."
 
 
 def _assert_no_directory_delimeter(key):
-    assert "/" not in key, "Key must not contain '/', but key = '{:s}'".format(
-        key
-    )
-    assert (
-        "\\" not in key
-    ), "Key must not contain '\\', but key = '{:s}'".format(key)
+    assert "/" not in key, f"Key must not contain '/', but key = '{key:s}'."
+    assert "\\" not in key, f"Key must not contain '\\', but key = '{key:s}'"
 
 
 def assert_key_is_valid(key):

@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from dynamicsizerecarray import DynamicSizeRecarray
 
 
 def make_mask_of_right_in_left(left_indices, right_indices):
@@ -80,7 +81,7 @@ def cut_level_on_indices(level, indices, index_key, column_keys=None):
         how="inner",
     )
     del part_df
-    return common_df.to_records(index=False)
+    return DynamicSizeRecarray(recarray=common_df.to_records(index=False))
 
 
 def cut_table_on_indices(table, common_indices, index_key, level_keys=None):

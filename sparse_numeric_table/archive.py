@@ -81,9 +81,6 @@ class LevelBuffer:
             self._append_level(level=level_block)
 
     def flush(self):
-        if self.size == 0:
-            return
-
         level_block_path = posixpath.join(
             self.level_key, f"{self.block_id:06d}"
         )

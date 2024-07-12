@@ -78,3 +78,37 @@ def test_column_commnad():
             my_table["elementary_school"],
             partly_back["elementary_school"],
         )
+
+
+def test_preserves_dtypes_without_writing_anything():
+    table = snt.SparseNumericTable(
+        dtypes=snt.testing.make_example_table_dtypes()
+    )
+
+    with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
+        path = os.path.join(tmp, "table.zip")
+
+        with snt.archive.open(path, "w", dtypes=table.dtypes) as f:
+            pass  # do not write anything.
+
+        with snt.archive.open(path, "r") as f:
+            back = f.read_table()
+
+        snt.testing.assert_dtypes_are_equal(table.dtypes, back.dtypes)
+
+
+def test_preserves_dtypes_when_table_empty():
+    table = snt.SparseNumericTable(
+        dtypes=snt.testing.make_example_table_dtypes()
+    )
+
+    with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
+        path = os.path.join(tmp, "table.zip")
+
+        with snt.archive.open(path, "w", dtypes=table.dtypes) as f:
+            f.append_table(table)
+
+        with snt.archive.open(path, "r") as f:
+            back = f.read_table()
+
+        snt.testing.assert_dtypes_are_equal(table.dtypes, back.dtypes)

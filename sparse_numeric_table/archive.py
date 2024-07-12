@@ -146,7 +146,7 @@ class Reader:
 
         self.info = {}
         for item in self.infolist:
-            oo = split_filename(filename=item.filename)
+            oo = _properties_from_filename(filename=item.filename)
             lk = oo["level_key"]
             ck = oo["column_key"]
             bk = oo["block_key"]
@@ -262,7 +262,7 @@ class Reader:
         return f"{self.__class__.__name__:s}()"
 
 
-def split_filename(filename):
+def _properties_from_filename(filename):
     filename, basename = posixpath.split(filename)
     out = {}
     basename, ext = posixpath.splitext(basename)

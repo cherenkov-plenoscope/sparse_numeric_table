@@ -41,16 +41,22 @@ def test_from_records():
             if rnd() > 0.9:
                 db["C"].append_record({"i": i + 3, "e": -rnd()})
 
-            path = os.path.join(tmp, "{:06d}.tar".format(j))
+            path = os.path.join(tmp, "{:06d}.zip".format(j))
             job_result_paths.append(path)
             snt.testing.assert_dtypes_are_equal(a=db.dtypes, b=dtypes)
-            snt.write(path=path, table=db)
+            with snt.archive.open(path, "w", dtypes=db.dtypes) as tout:
+                tout.append_table(db)
 
         # reduce
         # ------
-        full_table = snt.concatenate_files(
-            list_of_table_paths=job_result_paths, dtypes=dtypes
+        full_path = os.path.join(tmp, "full.zip")
+        snt.archive.concatenate(
+            input_paths=job_result_paths,
+            output_path=full_path,
+            dtypes=dtypes,
         )
+        with snt.archive.open(full_path, "r") as tin:
+            full_table = tin.read_table()
 
     snt.testing.assert_dtypes_are_equal(a=full_table.dtypes, b=dtypes)
 
@@ -269,20 +275,23 @@ def test_concatenate_several_tables():
                 index_dtype=index_dtype,
             )
             table_i_dtypes = snt.testing.make_example_table_dtypes()
-            paths.append(os.path.join(tmp, "{:06d}.tar".format(i)))
+            paths.append(os.path.join(tmp, "{:06d}.zip".format(i)))
             snt.testing.assert_dtypes_are_equal(
                 table_i.dtypes,
                 table_i_dtypes,
             )
-            snt.write(
-                path=paths[-1],
-                table=table_i,
-            )
-        output_path = os.path.join(tmp, "full.tar")
-        full_table = snt.concatenate_files(
-            list_of_table_paths=paths,
+            with snt.archive.open(paths[-1], "w", dtypes=table_i.dtypes) as f:
+                f.append_table(table_i)
+
+        output_path = os.path.join(tmp, "full.zip")
+        snt.archive.concatenate(
+            input_paths=paths,
+            output_path=output_path,
             dtypes=table_i_dtypes,
         )
+        with snt.archive.open(output_path, "r") as tin:
+            full_table = tin.read_table()
+
     snt.testing.assert_dtypes_are_equal(full_table.dtypes, table_i_dtypes)
 
     assert (
@@ -315,9 +324,17 @@ def test_concatenate_empty_list_of_paths():
     dtypes = snt.testing.make_example_table_dtypes(index_dtype=("idx", "<u8"))
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         output_path = os.path.join(tmp, "empty_table.tar")
-        empty_table = snt.concatenate_files(
-            list_of_table_paths=[], dtypes=dtypes
+
+        snt.archive.concatenate(
+            input_paths=[],
+            output_path=output_path,
+            dtypes=dtypes,
         )
+
+        with snt.archive.open(output_path, "r") as tin:
+            empty_table = tin.read_table()
+
+    snt.testing.assert_dtypes_are_equal(dtypes, empty_table.dtypes)
     assert empty_table["elementary_school"]["idx"].shape[0] == 0
 
 

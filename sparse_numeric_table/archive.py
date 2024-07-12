@@ -279,3 +279,11 @@ def _properties_from_filename(filename):
     out["level_key"] = level_key
     out["block_key"] = block_key
     return out
+
+
+def concatenate(input_paths, output_path, dtypes):
+    with open(output_path, mode="w", dtypes=dtypes) as tout:
+        for input_path in input_paths:
+            with open(input_path, mode="r") as tin:
+                part = tin.read_table()
+                tout.append_table(part)

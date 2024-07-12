@@ -173,32 +173,3 @@ def read(path=None, fileobj=None):
         del tmp[level_key]
 
     return out
-
-
-# concatenate
-# ===========
-
-
-def concatenate_files(list_of_table_paths, dtypes):
-    if len(list_of_table_paths) == 0:
-        out = {}
-        for level_key in dtypes:
-            out[level_key] = np.frombuffer(b"", dtype=dtypes[level_key])
-        return out
-
-    with tempfile.TemporaryDirectory(prefix="sparse_table_concatenate") as tmp:
-        for part_table_path in list_of_table_paths:
-            part_table = read(path=part_table_path)
-            testing.assert_dtypes_are_equal(part_table.dtypes, dtypes)
-            for level_key in dtypes:
-                with open(os.path.join(tmp, level_key), "ab") as fa:
-                    fa.write(part_table[level_key].tobytes())
-
-        out = SparseNumericTable(dtypes=dtypes)
-        for level_key in dtypes:
-            with open(os.path.join(tmp, level_key), "rb") as f:
-                out[level_key].append_recarray(
-                    np.frombuffer(f.read(), dtype=dtypes[level_key])
-                )
-
-    return out

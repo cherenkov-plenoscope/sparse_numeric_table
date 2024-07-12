@@ -45,6 +45,10 @@ def assert_dtypes_are_equal(a, b):
     b : dict of lists of tuples
         The dtypes of table 'b'.
     """
+    assert_lists_have_same_items_regardless_of_order(
+        list(b.keys()), list(b.keys())
+    )
+
     for lkey in a:
         assert (
             lkey in b
@@ -143,19 +147,3 @@ def make_example_table(prng, size, start_index=0, index_dtype=("idx", "<u8")):
     validating.assert_dtypes_are_valid(dtypes=example_table_dtypes)
     assert_dtypes_are_equal(a=t.dtypes, b=example_table_dtypes)
     return t
-
-
-def assert_dtypes_equal(a, b):
-    assert_lists_have_same_items_regardless_of_order(
-        list(b.keys()), list(b.keys())
-    )
-    for level_key in a:
-        alvl = a[level_key]
-        blvl = b[level_key]
-        for i in range(len(alvl)):
-            a_column_name = alvl[i][0]
-            b_column_name = blvl[i][0]
-            assert a_column_name == b_column_name
-            a_column_dtype = alvl[i][1]
-            b_column_dtype = blvl[i][1]
-            assert a_column_dtype == b_column_dtype

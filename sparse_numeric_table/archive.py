@@ -5,10 +5,7 @@ import dynamicsizerecarray
 import gzip
 import copy
 
-from .base import SparseNumericTable
-from .base import _sub_dtypes
-from .base import _intersection
-from .base import _cut
+from . import base
 
 
 def open(file, mode="r", dtypes=None, compress=False, block_size=262_144):
@@ -208,16 +205,16 @@ class Reader:
         return out.to_recarray()
 
     def intersection(self, index, levels=None):
-        return _intersection(handle=self, index=index, levels=levels)
+        return base._intersection(handle=self, index=index, levels=levels)
 
-    def read_table(
+    def query(
         self,
         index=None,
         indices=None,
         levels_and_columns=None,
         align_indices=False,
     ):
-        return _cut(
+        return base._query(
             handle=self,
             index=index,
             indices=indices,
@@ -264,5 +261,5 @@ def concatenate(input_paths, output_path, dtypes):
     with open(output_path, mode="w", dtypes=dtypes) as tout:
         for input_path in input_paths:
             with open(input_path, mode="r") as tin:
-                part = tin.read_table()
+                part = tin.query()
                 tout.append_table(part)

@@ -56,7 +56,7 @@ def test_from_records():
             dtypes=dtypes,
         )
         with snt.archive.open(full_path, "r") as tin:
-            full_table = tin.read_table()
+            full_table = tin.query()
 
     snt.testing.assert_dtypes_are_equal(a=full_table.dtypes, b=dtypes)
 
@@ -74,7 +74,7 @@ def test_write_read_full_table():
         with snt.archive.open(zpath, "w", dtypes=table.dtypes) as tout:
             tout.append_table(table)
         with snt.archive.open(zpath, "r") as tin:
-            zback = tin.read_table()
+            zback = tin.query()
         snt.testing.assert_dtypes_are_equal(table.dtypes, zback.dtypes)
         snt.testing.assert_tables_are_equal(table, zback)
 
@@ -105,7 +105,7 @@ def test_write_read_empty_table():
         with snt.archive.open(zpath, "w", dtypes=empty.dtypes) as tout:
             tout.append_table(empty)
         with snt.archive.open(zpath, "r") as tin:
-            zback = tin.read_table()
+            zback = tin.query()
         snt.testing.assert_dtypes_are_equal(empty.dtypes, zback.dtypes)
         snt.testing.assert_tables_are_equal(empty, zback)
 
@@ -285,7 +285,7 @@ def test_concatenate_several_tables():
             dtypes=table_i_dtypes,
         )
         with snt.archive.open(output_path, "r") as tin:
-            full_table = tin.read_table()
+            full_table = tin.query()
 
     snt.testing.assert_dtypes_are_equal(full_table.dtypes, table_i_dtypes)
 
@@ -327,7 +327,7 @@ def test_concatenate_empty_list_of_paths():
         )
 
         with snt.archive.open(output_path, "r") as tin:
-            empty_table = tin.read_table()
+            empty_table = tin.query()
 
     snt.testing.assert_dtypes_are_equal(dtypes, empty_table.dtypes)
     assert empty_table["elementary_school"]["idx"].shape[0] == 0
@@ -359,7 +359,7 @@ def test_only_index_in_level():
         with snt.archive.open(path, "w", dtypes=table.dtypes) as tout:
             tout.append_table(table)
         with snt.archive.open(path, "r") as tin:
-            table_back = tin.read_table()
+            table_back = tin.query()
         snt.testing.assert_dtypes_are_equal(table_back.dtypes, dtypes)
         snt.testing.assert_tables_are_equal(table, table_back)
 

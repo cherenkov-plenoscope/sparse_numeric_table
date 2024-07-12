@@ -18,7 +18,7 @@ def test_write_read_full_table():
             f.append_table(my_table)
 
         with snt.archive.open(path, "r") as f:
-            my_table_back = f.read_table()
+            my_table_back = f.query()
 
         snt.testing.assert_tables_are_equal(my_table, my_table_back)
 
@@ -38,7 +38,7 @@ def test_read_only_part_of_table():
             f.append_table(my_table)
 
         with snt.archive.open(path, "r") as f:
-            partly_back = f.read_table(
+            partly_back = f.query(
                 levels_and_columns={
                     "elementary_school": ["idx", "num_friends"]
                 }
@@ -67,12 +67,12 @@ def test_column_commnad():
             f.append_table(my_table)
 
         with snt.archive.open(path, "r") as f:
-            partly_back = f.read_table(
+            partly_back = f.query(
                 levels_and_columns={"elementary_school": "__all__"}
             )
 
         with pytest.raises(KeyError):
-            _ = f.read_table(levels_and_columns={"elementary_school": "foo"})
+            _ = f.query(levels_and_columns={"elementary_school": "foo"})
 
         np.testing.assert_array_equal(
             my_table["elementary_school"],
@@ -92,7 +92,7 @@ def test_preserves_dtypes_without_writing_anything():
             pass  # do not write anything.
 
         with snt.archive.open(path, "r") as f:
-            back = f.read_table()
+            back = f.query()
 
         snt.testing.assert_dtypes_are_equal(table.dtypes, back.dtypes)
 
@@ -109,6 +109,6 @@ def test_preserves_dtypes_when_table_empty():
             f.append_table(table)
 
         with snt.archive.open(path, "r") as f:
-            back = f.read_table()
+            back = f.query()
 
         snt.testing.assert_dtypes_are_equal(table.dtypes, back.dtypes)

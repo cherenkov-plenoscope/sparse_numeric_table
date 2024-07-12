@@ -105,14 +105,14 @@ class SparseNumericTable:
     def intersection(self, index, levels=None):
         return _intersection(handle=self, index=index, levels=levels)
 
-    def cut(
+    def query(
         self,
         index=None,
         indices=None,
         levels_and_columns=None,
         align_indices=False,
     ):
-        return _cut(
+        return _query(
             handle=self,
             index=index,
             indices=indices,
@@ -176,7 +176,7 @@ def _intersection(handle, index, levels=None):
     return inter
 
 
-def _cut(
+def _query(
     handle,
     index=None,
     indices=None,

@@ -6,6 +6,9 @@ import gzip
 import copy
 
 from .base import SparseNumericTable
+from .base import _sub_dtypes
+from .base import _intersection
+from .base import _cut
 
 
 def open(file, mode="r", dtypes=None, compress=False, block_size=262_144):
@@ -178,6 +181,15 @@ class Reader:
     def list_column_keys(self, level_key):
         return list(self.info[level_key].keys())
 
+    def _get_level_column(self, level_key, column_key):
+        return self.read_column(level_key, column_key)
+
+    def _get_len_level(self, level_key):
+        out = 0
+        first_column_key = list(self.info[level_key].keys())[0]
+        first_column_in_level = self.read_column(level_key, first_column_key)
+        return len(first_column_in_level)
+
     def read_column(self, level_key, column_key):
         dtype = None
         for item in self.dtypes[level_key]:
@@ -195,56 +207,23 @@ class Reader:
                 out.append_recarray(block)
         return out.to_recarray()
 
-    def _sub_dtypes(self, levels_and_columns=None):
-        if levels_and_columns is None:
-            return self.dtypes
-        out = {}
-        for lk in levels_and_columns:
-            out[lk] = []
+    def intersection(self, index, levels=None):
+        return _intersection(handle=self, index=index, levels=levels)
 
-            if isinstance(levels_and_columns[lk], str):
-                if levels_and_columns[lk] == "__all__":
-                    out[lk] = self.dtypes[lk]
-                else:
-                    raise KeyError(
-                        "Expected column command to be in ['__all__']."
-                        f"But it is '{levels_and_columns[lk]:s}'."
-                    )
-            else:
-                for ck in levels_and_columns[lk]:
-                    dt = None
-                    for item in self.dtypes[lk]:
-                        if item[0] == ck:
-                            dt = (ck, item[1])
-                    assert dt is not None
-                    out[lk].append(dt)
-
-        return out
-
-    def read_table(self, levels_and_columns=None):
-        sub_dtypes = self._sub_dtypes(levels_and_columns=levels_and_columns)
-
-        out = SparseNumericTable()
-        for lk in sub_dtypes:
-            level_dtype = copy.deepcopy(sub_dtypes[lk])
-            first_dtype = level_dtype.pop(0)
-            ck = first_dtype[0]
-            first_column = self.read_column(level_key=lk, column_key=ck)
-
-            out[lk] = dynamicsizerecarray.DynamicSizeRecarray(
-                dtype=sub_dtypes[lk],
-                shape=first_column.shape[0],
-            )
-
-            out[lk][ck] = first_column
-
-            for next_dtype in level_dtype:
-                ck = next_dtype[0]
-                next_column = self.read_column(level_key=lk, column_key=ck)
-                out[lk][ck] = next_column
-
-        out.shrink_to_fit()
-        return out
+    def read_table(
+        self,
+        index=None,
+        indices=None,
+        levels_and_columns=None,
+        align_indices=False,
+    ):
+        return _cut(
+            handle=self,
+            index=index,
+            indices=indices,
+            levels_and_columns=levels_and_columns,
+            align_indices=align_indices,
+        )
 
     def close(self):
         self.zipfile.close()

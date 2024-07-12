@@ -77,12 +77,3 @@ from . import logic
 from . import tar_format
 from .base import SparseNumericTable
 from .base import dict_to_recarray
-
-
-def append(table_a, table_b):
-    """
-    Appends table_b to table_a.
-    """
-    for level_key in table_a:
-        table_a[level_key].append_recarray(table_b[level_key])
-    return table_a

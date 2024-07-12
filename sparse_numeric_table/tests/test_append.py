@@ -18,7 +18,7 @@ def test_append_b_to_a():
     assert len(b["high_school"]) == 10
     assert len(b["university"]) == 1
 
-    a = snt.append(a, b)
+    a.append(b)
     assert len(a["elementary_school"]) == 200
     assert len(a["high_school"]) == 20
     assert len(a["university"]) == 2

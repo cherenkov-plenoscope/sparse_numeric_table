@@ -76,6 +76,18 @@ class SparseNumericTable:
         out.seek(0)
         return out.read()
 
+    def append(self, other):
+        """
+        Append another table.
+
+        Parameters
+        ----------
+        other : SparseNumericTable (or dict)
+            The other table will be appended to this one (self).
+        """
+        for lk in other:
+            self[lk].append_recarray(other[lk])
+
 
 def _init_tables_from_dtypes(dtypes):
     validating.assert_dtypes_are_valid(dtypes=dtypes)

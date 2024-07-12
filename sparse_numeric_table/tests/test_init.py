@@ -63,56 +63,51 @@ def test_from_records():
 
 def test_write_read_full_table():
     prng = np.random.Generator(np.random.MT19937(seed=1337))
+    table = snt.testing.make_example_table(prng=prng, size=1000 * 1000)
 
-    my_table = snt.testing.make_example_table(prng=prng, size=1000 * 1000)
-    my_table_dtypes = snt.testing.make_example_table_dtypes()
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
-        path = os.path.join(tmp, "my_table.tar")
-        snt.testing.assert_dtypes_are_equal(
-            a=my_table.dtypes, b=my_table_dtypes
-        )
-        snt.write(path=path, table=my_table)
-        my_table_back = snt.read(path=path)
-        snt.testing.assert_dtypes_are_equal(
-            a=my_table_back.dtypes, b=my_table_dtypes
-        )
-        snt.testing.assert_tables_are_equal(my_table, my_table_back)
+        tpath = os.path.join(tmp, "table.tar")
 
-        # no dtypes
-        path_nos = os.path.join(tmp, "my_table_no_dtypes.tar")
-        snt.write(path=path_nos, table=my_table)
-        my_table_back_nos = snt.read(path=path_nos)
-        snt.testing.assert_tables_are_equal(my_table, my_table_back_nos)
-        snt.testing.assert_dtypes_are_equal(
-            my_table_back_nos.dtypes, my_table_dtypes
-        )
+        # zip archive
+        # -----------
+        zpath = os.path.join(tmp, "table.zip")
+        with snt.archive.open(zpath, "w", dtypes=table.dtypes) as tout:
+            tout.append_table(table)
+        with snt.archive.open(zpath, "r") as tin:
+            zback = tin.read_table()
+        snt.testing.assert_dtypes_are_equal(table.dtypes, zback.dtypes)
+        snt.testing.assert_tables_are_equal(table, zback)
+
+        # tape archive
+        # ------------
+        snt.tar_format.write(path=tpath, table=table)
+        tback = snt.tar_format.read(path=tpath)
+        snt.testing.assert_dtypes_are_equal(table.dtypes, tback.dtypes)
+        snt.testing.assert_tables_are_equal(table, tback)
 
 
 def test_write_read_empty_table():
     prng = np.random.Generator(np.random.MT19937(seed=1337))
 
-    empty_table = snt.testing.make_example_table(prng=prng, size=0)
-    empty_table_dtypes = snt.testing.make_example_table_dtypes()
+    empty = snt.testing.make_example_table(prng=prng, size=0)
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
-        path = os.path.join(tmp, "my_empty_table.tar")
-        snt.testing.assert_dtypes_are_equal(
-            empty_table.dtypes, empty_table_dtypes
-        )
-        snt.write(path=path, table=empty_table)
-        my_table_back = snt.read(path=path)
-        snt.testing.assert_dtypes_are_equal(
-            my_table_back.dtypes, empty_table_dtypes
-        )
-        snt.testing.assert_tables_are_equal(empty_table, my_table_back)
+        # tape archive
+        # ------------
+        tpath = os.path.join(tmp, "empty.tar")
+        snt.tar_format.write(path=tpath, table=empty)
+        tback = snt.tar_format.read(path=tpath)
+        snt.testing.assert_dtypes_are_equal(tback.dtypes, empty.dtypes)
+        snt.testing.assert_tables_are_equal(tback, empty)
 
-        # no dtypes
-        path_nos = os.path.join(tmp, "my_empty_table_no_dtypes.tar")
-        snt.write(path=path_nos, table=empty_table)
-        my_table_back_nos = snt.read(path=path_nos)
-        snt.testing.assert_tables_are_equal(empty_table, my_table_back_nos)
-        snt.testing.assert_dtypes_are_equal(
-            my_table_back_nos.dtypes, empty_table_dtypes
-        )
+        # zip archive
+        # -----------
+        zpath = os.path.join(tmp, "empty.zip")
+        with snt.archive.open(zpath, "w", dtypes=empty.dtypes) as tout:
+            tout.append_table(empty)
+        with snt.archive.open(zpath, "r") as tin:
+            zback = tin.read_table()
+        snt.testing.assert_dtypes_are_equal(empty.dtypes, zback.dtypes)
+        snt.testing.assert_tables_are_equal(empty, zback)
 
 
 def test_merge_common():
@@ -358,8 +353,20 @@ def test_only_index_in_level():
 
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "table_with_index_only_level.tar")
-        snt.testing.assert_dtypes_are_equal(table.dtypes, dtypes)
-        snt.write(path=path, table=table)
-        table_back = snt.read(path=path)
+
+        # zip archive
+        # -----------
+        with snt.archive.open(path, "w", dtypes=table.dtypes) as tout:
+            tout.append_table(table)
+        with snt.archive.open(path, "r") as tin:
+            table_back = tin.read_table()
+        snt.testing.assert_dtypes_are_equal(table_back.dtypes, dtypes)
+        snt.testing.assert_tables_are_equal(table, table_back)
+
+        # tar
+        # ---
+        snt.tar_format.write(path=path, table=table)
+        table_back = snt.tar_format.read(path=path)
+
         snt.testing.assert_dtypes_are_equal(table_back.dtypes, dtypes)
         snt.testing.assert_tables_are_equal(table, table_back)

@@ -7,6 +7,8 @@ import tempfile
 import os
 import copy
 from dynamicsizerecarray import DynamicSizeRecarray
+import warnings
+
 
 from .base import SparseNumericTable
 from .base import dict_to_recarray
@@ -30,6 +32,12 @@ def write(path, table):
     table : dict of recarrays
             The sparse table.
     """
+    warnings.warn(
+        "The 'sparse_numeric_table.tar_format' is deprecated. "
+        "Use 'sparse_numeric_table.open()' instead.",
+        category=DeprecationWarning,
+    )
+
     with sequential_tar.open(name=path + ".tmp", mode="w") as tar:
         for level_key in table:
             for column_key in table[level_key].dtype.names:

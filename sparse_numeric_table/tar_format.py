@@ -1,20 +1,12 @@
-import pandas as pd
-import numpy as np
-import sequential_tar
-import io
-import shutil
-import tempfile
-import os
-import copy
-from dynamicsizerecarray import DynamicSizeRecarray
-import warnings
-
-
 from .base import SparseNumericTable
 from .base import dict_to_recarray
 
-# input output
-# ============
+import numpy as np
+import sequential_tar
+import shutil
+from dynamicsizerecarray import DynamicSizeRecarray
+import warnings
+
 
 LEVEL_COLUMN_DELIMITER = "/"
 FILEAME_TEMPLATE = "{:s}" + LEVEL_COLUMN_DELIMITER + "{:s}.{:s}"

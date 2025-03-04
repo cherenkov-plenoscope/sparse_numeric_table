@@ -29,8 +29,8 @@ def assert_tables_are_equal(table_a, table_b):
                 == table_b[level_key].dtype[column_key]
             )
             np.testing.assert_array_equal(
-                x=table_a[level_key][column_key],
-                y=table_b[level_key][column_key],
+                actual=table_a[level_key][column_key],
+                desired=table_b[level_key][column_key],
                 err_msg=f"table[{level_key:s}][{column_key:s}]",
                 verbose=True,
             )

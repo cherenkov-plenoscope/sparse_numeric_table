@@ -1,4 +1,5 @@
 import sparse_numeric_table as snt
+import pytest
 import numpy as np
 import pandas as pd
 import tempfile
@@ -80,10 +81,11 @@ def test_write_read_full_table():
 
         # tape archive
         # ------------
-        snt.tar_format.write(path=tpath, table=table)
-        tback = snt.tar_format.read(path=tpath)
-        snt.testing.assert_dtypes_are_equal(table.dtypes, tback.dtypes)
-        snt.testing.assert_tables_are_equal(table, tback)
+        with pytest.warns(DeprecationWarning) as w:
+            snt.tar_format.write(path=tpath, table=table)
+            tback = snt.tar_format.read(path=tpath)
+            snt.testing.assert_dtypes_are_equal(table.dtypes, tback.dtypes)
+            snt.testing.assert_tables_are_equal(table, tback)
 
 
 def test_write_read_empty_table():
@@ -93,11 +95,12 @@ def test_write_read_empty_table():
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         # tape archive
         # ------------
-        tpath = os.path.join(tmp, "empty.tar")
-        snt.tar_format.write(path=tpath, table=empty)
-        tback = snt.tar_format.read(path=tpath)
-        snt.testing.assert_dtypes_are_equal(tback.dtypes, empty.dtypes)
-        snt.testing.assert_tables_are_equal(tback, empty)
+        with pytest.warns(DeprecationWarning) as w:
+            tpath = os.path.join(tmp, "empty.tar")
+            snt.tar_format.write(path=tpath, table=empty)
+            tback = snt.tar_format.read(path=tpath)
+            snt.testing.assert_dtypes_are_equal(tback.dtypes, empty.dtypes)
+            snt.testing.assert_tables_are_equal(tback, empty)
 
         # zip archive
         # -----------
@@ -365,8 +368,9 @@ def test_only_index_in_level():
 
         # tar
         # ---
-        snt.tar_format.write(path=path, table=table)
-        table_back = snt.tar_format.read(path=path)
+        with pytest.warns(DeprecationWarning) as w:
+            snt.tar_format.write(path=path, table=table)
+            table_back = snt.tar_format.read(path=path)
 
         snt.testing.assert_dtypes_are_equal(table_back.dtypes, dtypes)
         snt.testing.assert_tables_are_equal(table, table_back)

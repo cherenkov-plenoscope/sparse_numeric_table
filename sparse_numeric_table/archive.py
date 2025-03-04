@@ -38,7 +38,7 @@ class LevelBuffer:
         self.block_size = block_size
         assert self.block_size > 0
         self.block_id = 0
-        self.level = np.core.records.recarray(
+        self.level = np.recarray(
             shape=self.block_size,
             dtype=self.level_dtype,
         )

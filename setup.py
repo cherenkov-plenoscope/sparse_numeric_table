@@ -29,7 +29,7 @@ setuptools.setup(
     install_requires=[
         "numpy",
         "pandas",
-        "dynamicsizerecarray>=0.0.11",
+        "dynamicsizerecarray>=0.0.12",
         "sequential_tar>=0.0.4",
     ],
     classifiers=[

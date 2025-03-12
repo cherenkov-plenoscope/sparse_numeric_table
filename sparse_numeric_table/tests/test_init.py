@@ -210,18 +210,18 @@ def test_merge_across_all_levels_random_order_indices():
 def test_merge_random_order_indices():
     prng = np.random.Generator(np.random.MT19937(seed=1337))
 
-    index_dtype = ("idx", "<u8")
+    index_dtype = ("uid", "<u8")
     size = 1000 * 1000
     my_table = snt.testing.make_example_table(
         prng=prng, size=size, index_dtype=index_dtype
     )
 
-    has_elementary_school = my_table["elementary_school"]["idx"]
-    has_high_school = my_table["high_school"]["idx"]
-    has_big_lunchpack = my_table["elementary_school"]["idx"][
+    has_elementary_school = my_table["elementary_school"]["uid"]
+    has_high_school = my_table["high_school"]["uid"]
+    has_big_lunchpack = my_table["elementary_school"]["uid"][
         my_table["elementary_school"]["lunchpack_size"] > 0.5
     ]
-    has_2best_friends = my_table["high_school"]["idx"][
+    has_2best_friends = my_table["high_school"]["uid"][
         my_table["high_school"]["num_best_friends"] >= 2
     ]
 
@@ -234,12 +234,12 @@ def test_merge_random_order_indices():
         table=my_table,
         common_indices=cut_indices,
         level_keys=["elementary_school", "high_school"],
-        index_key="idx",
+        index_key="uid",
     )
     sorted_cut_table = snt.logic.sort_table_on_common_indices(
         table=cut_table,
         common_indices=cut_indices,
-        index_key="idx",
+        index_key="uid",
     )
 
     assert "university" not in sorted_cut_table
@@ -247,11 +247,11 @@ def test_merge_random_order_indices():
     assert "high_school" in sorted_cut_table
 
     np.testing.assert_array_equal(
-        sorted_cut_table["elementary_school"]["idx"],
-        sorted_cut_table["high_school"]["idx"],
+        sorted_cut_table["elementary_school"]["uid"],
+        sorted_cut_table["high_school"]["uid"],
     )
     np.testing.assert_array_equal(
-        sorted_cut_table["elementary_school"]["idx"], cut_indices
+        sorted_cut_table["elementary_school"]["uid"], cut_indices
     )
 
 
@@ -261,7 +261,7 @@ def test_concatenate_several_tables():
     block_size = 10 * 1000
     num_blocks = 100
 
-    index_dtype = ("idx", "<u8")
+    index_dtype = ("uid", "<u8")
 
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         paths = []
@@ -293,33 +293,33 @@ def test_concatenate_several_tables():
     snt.testing.assert_dtypes_are_equal(full_table.dtypes, table_i_dtypes)
 
     assert (
-        full_table["elementary_school"]["idx"].shape[0]
+        full_table["elementary_school"]["uid"].shape[0]
         == num_blocks * block_size
     )
     assert (
-        len(set(full_table["elementary_school"]["idx"]))
+        len(set(full_table["elementary_school"]["uid"]))
         == num_blocks * block_size
     ), "The indices must be uniqe"
     assert (
-        full_table["high_school"]["idx"].shape[0]
+        full_table["high_school"]["uid"].shape[0]
         == num_blocks * block_size // 10
     )
     assert (
-        len(set(full_table["high_school"]["idx"]))
+        len(set(full_table["high_school"]["uid"]))
         == num_blocks * block_size // 10
     )
     assert (
-        full_table["university"]["idx"].shape[0]
+        full_table["university"]["uid"].shape[0]
         == num_blocks * block_size // 100
     )
     assert (
-        len(set(full_table["university"]["idx"]))
+        len(set(full_table["university"]["uid"]))
         == num_blocks * block_size // 100
     )
 
 
 def test_concatenate_empty_list_of_paths():
-    dtypes = snt.testing.make_example_table_dtypes(index_dtype=("idx", "<u8"))
+    dtypes = snt.testing.make_example_table_dtypes(index_dtype=("uid", "<u8"))
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         output_path = os.path.join(tmp, "empty_table.tar")
 
@@ -333,24 +333,24 @@ def test_concatenate_empty_list_of_paths():
             empty_table = tin.query()
 
     snt.testing.assert_dtypes_are_equal(dtypes, empty_table.dtypes)
-    assert empty_table["elementary_school"]["idx"].shape[0] == 0
+    assert empty_table["elementary_school"]["uid"].shape[0] == 0
 
 
 def test_only_index_in_level():
     prng = np.random.Generator(np.random.MT19937(seed=1337))
 
     dtypes = {
-        "A": [("idx", "<u8"), ("height", "<i8")],
-        "B": [("idx", "<u8")],
+        "A": [("uid", "<u8"), ("height", "<i8")],
+        "B": [("uid", "<u8")],
     }
 
     table = snt.SparseNumericTable(dtypes=dtypes)
 
     for i in np.arange(10):
-        table["A"].append_record({"idx": i, "height": 10})
+        table["A"].append_record({"uid": i, "height": 10})
 
-    for i in prng.choice(table["A"]["idx"], 5):
-        table["B"].append_record({"idx": i})
+    for i in prng.choice(table["A"]["uid"], 5):
+        table["B"].append_record({"uid": i})
 
     snt.testing.assert_dtypes_are_equal(table.dtypes, dtypes)
 

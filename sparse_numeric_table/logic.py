@@ -135,7 +135,9 @@ def sort_table_on_common_indices(table, common_indices, index_key):
     return out
 
 
-def cut_and_sort_table_on_indices(table, common_indices, level_keys=None):
+def cut_and_sort_table_on_indices(
+    table, common_indices, index_key, level_keys=None
+):
     """
     Returns a table (rectangular, not sparse) containing only rows listed in
     common_indices and in this order.
@@ -152,10 +154,13 @@ def cut_and_sort_table_on_indices(table, common_indices, level_keys=None):
     out = cut_table_on_indices(
         table=table,
         common_indices=common_indices,
+        index_key=index_key,
         level_keys=level_keys,
     )
     out = sort_table_on_common_indices(
-        table=out, common_indices=common_indices
+        table=out,
+        common_indices=common_indices,
+        index_key=index_key,
     )
     return out
 
@@ -166,18 +171,16 @@ def make_rectangular_DataFrame(table, index_key, delimiter="/"):
     The table must already be rectangular, i.e. not sparse anymore.
     The row-indices among all levels in the table must have the same ordering.
     """
-    idx = index_key
-
     out = {}
     for level_key in table:
         for column_key in table[level_key].dtype.names:
-            if column_key == idx:
-                if idx in out:
+            if column_key == index_key:
+                if index_key in out:
                     np.testing.assert_array_equal(
-                        out[idx], table[level_key][idx]
+                        out[index_key], table[level_key][index_key]
                     )
                 else:
-                    out[idx] = table[level_key][idx]
+                    out[index_key] = table[level_key][index_key]
             else:
                 out[
                     "{:s}{:s}{:s}".format(level_key, delimiter, column_key)

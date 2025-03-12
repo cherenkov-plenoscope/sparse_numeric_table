@@ -67,7 +67,7 @@ def assert_dtypes_are_equal(a, b):
             assert acol[1] == bcol[1], f"Expected columns to have same dtypes."
 
 
-def make_example_table_dtypes(index_dtype=("idx", "<u8")):
+def make_example_table_dtypes(index_dtype=("uid", "<u8")):
     return {
         "elementary_school": [
             index_dtype,
@@ -87,7 +87,7 @@ def make_example_table_dtypes(index_dtype=("idx", "<u8")):
     }
 
 
-def make_example_table(prng, size, start_index=0, index_dtype=("idx", "<u8")):
+def make_example_table(prng, size, start_index=0, index_dtype=("uid", "<u8")):
     """
     Children start in elementary school. 10% progress to high school, and 10%
     of those progress to university.

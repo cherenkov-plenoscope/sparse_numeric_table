@@ -3,12 +3,7 @@ from . import logic
 
 import copy
 import numpy as np
-import pandas
 from dynamicsizerecarray import DynamicSizeRecarray
-
-
-def dict_to_recarray(d):
-    return pandas.DataFrame(d).to_records(index=False)
 
 
 def _intersection(handle, index, levels=None):

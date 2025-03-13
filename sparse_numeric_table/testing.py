@@ -1,9 +1,12 @@
-from .bedrock import dict_to_recarray
 from .base import SparseNumericTable
-
 from . import validating
 
 import numpy as np
+import pandas
+
+
+def dict_to_recarray(d):
+    return pandas.DataFrame(d).to_records(index=False)
 
 
 def assert_lists_have_same_items_regardless_of_order(keys_a, keys_b):

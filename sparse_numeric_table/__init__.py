@@ -76,8 +76,6 @@ from .archive import open
 from .archive import concatenate_files
 from .base import SparseNumericTable
 
-from . import archive
-from . import testing
 from . import logic
-from . import base
-from . import bedrock
+from . import validating
+from . import testing

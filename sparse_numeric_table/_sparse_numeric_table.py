@@ -5,7 +5,7 @@ import copy
 from dynamicsizerecarray import DynamicSizeRecarray
 
 from . import validating
-from . import bedrock
+from . import _base
 
 
 class SparseNumericTable:
@@ -136,7 +136,7 @@ class SparseNumericTable:
             self[lk].append_recarray(other[lk])
 
     def intersection(self, index, levels=None):
-        return bedrock._intersection(handle=self, index=index, levels=levels)
+        return _base._intersection(handle=self, index=index, levels=levels)
 
     def query(
         self,
@@ -145,7 +145,7 @@ class SparseNumericTable:
         levels_and_columns=None,
         align_indices=False,
     ):
-        return bedrock._query(
+        return _base._query(
             handle=self,
             index=index,
             indices=indices,

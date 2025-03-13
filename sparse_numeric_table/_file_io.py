@@ -11,17 +11,45 @@ from . import _base
 def open(
     file,
     mode="r",
+    dtypes_and_index_key_from=None,
     dtypes=None,
     index_key=None,
-    dtypes_and_index_key_from=None,
     compress=False,
     block_size=262_144,
 ):
+    """
+    Write or read a SparseNumericTable.
+    When writing, the table can be appended peace by peace. No need to have the
+    full table in memory.
+    When reading, only certain columns of certain levels can be queried. No need
+    to read the full table into memory at once.
+
+    Parameters
+    ----------
+    file : file handle or path (str)
+        See zipfile.Zipfile(file)?
+    mode : str (default="r")
+        Either "w"rite or "r"ead.
+    dtypes_and_index_key_from : SparseNumericTable
+        When mode="w" (writing), the 'dtypes' and 'index_key' must be known.
+        Either from a 'SparseNumericTable' or from parameters 'dtypes' and
+        'index_key'.
+    dtypes : dict
+        See parameter 'dtypes_and_index_key_from'.
+    index_key : str
+        See parameter 'dtypes_and_index_key_from'.
+    compress : bool
+        Compress internal blocks using gzip when True.
+    block_size : int (default=262_144)
+        The maximum size in bytes of a level block.
+    """
     if str.lower(mode) == "r":
         return SparseNumericTableReader(file=file)
     elif str.lower(mode) == "w":
         dtypes, index_key = _get_dtypes_and_index_key(
-            dtypes, index_key, dtypes_and_index_key_from
+            dtypes=dtypes,
+            index_key=index_key,
+            dtypes_and_index_key_from=dtypes_and_index_key_from,
         )
         return SparseNumericTableWriter(
             file=file,
@@ -310,7 +338,9 @@ def concatenate_files(
     dtypes_and_index_key_from=None,
 ):
     dtypes, index_key = _get_dtypes_and_index_key(
-        dtypes, index_key, dtypes_and_index_key_from
+        dtypes=dtypes,
+        index_key=index_key,
+        dtypes_and_index_key_from=dtypes_and_index_key_from,
     )
 
     with open(

@@ -72,8 +72,8 @@ sparse tables
 
 from .version import __version__
 
-from .archive import open
-from .archive import concatenate_files
+from ._file_io import open
+from ._file_io import concatenate_files
 from ._sparse_numeric_table import SparseNumericTable
 
 from . import logic

@@ -58,6 +58,27 @@ class SparseNumericTable:
             dtypes=self.dtypes, index_key=self.index_key
         )
 
+    def update(self, other):
+        """
+        Update a level in the table. If the level already exists it will be
+        overwritten.
+        """
+        for level_key in other.keys():
+            self[level_key] = other[level_key]
+
+    def append(self, other):
+        """
+        Append the levels of another table to the levels of this table without
+        overwriting the levels of this table.
+        """
+        for level_key in other.keys():
+            _level_recarray = other[level_key].to_recarray()
+
+            if level_key in self.keys():
+                self[level_key].append_recarray(_level_recarray)
+            else:
+                self[level_key] = _level_recarray
+
     def __getitem__(self, level_key):
         return self._table[level_key]
 

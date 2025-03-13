@@ -13,6 +13,28 @@ DTYPES = [
 ]
 
 
+def is_column_key_in_dtypes(dtypes, column_key):
+    has_index_key = {}
+    for level_key in dtypes:
+        has_index_key[level_key] = False
+        for this_column_key, _ in dtypes[level_key]:
+            if this_column_key == column_key:
+                has_index_key[level_key] = True
+    return has_index_key
+
+
+def assert_all_levels_have_index_key(dtypes, index_key):
+    has_index_key = is_column_key_in_dtypes(
+        dtypes=dtypes, column_key=index_key
+    )
+    for level_key in has_index_key:
+        if not has_index_key[level_key]:
+            assert False, (
+                f"Expected level '{level_key:s}' to "
+                f"have 'index_key': '{self.index_key:s}'."
+            )
+
+
 def _assert_starts_not_with_dunderscore(key):
     assert not str.startswith(
         key, "__"

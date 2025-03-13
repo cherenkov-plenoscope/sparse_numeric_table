@@ -13,7 +13,7 @@ def test_write_read_full_table():
         path = os.path.join(tmp, "my_table.zip")
 
         with snt.open(
-            path, "w", dtypes=my_table.dtypes, block_size=10_000
+            path, "w", dtypes_and_index_key_from=my_table, block_size=10_000
         ) as f:
             f.append_table(my_table)
 
@@ -29,11 +29,12 @@ def test_read_only_part_of_table():
     my_table = snt.testing.make_example_table(
         prng=prng, size=100_000, index_dtype=("uid", "<u8")
     )
+
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "my_table.zip")
 
         with snt.open(
-            path, "w", dtypes=my_table.dtypes, block_size=10_000
+            path, "w", dtypes_and_index_key_from=my_table, block_size=10_000
         ) as f:
             f.append_table(my_table)
 
@@ -54,7 +55,7 @@ def test_read_only_part_of_table():
         )
 
 
-def test_column_commnad():
+def test_column_command():
     prng = np.random.Generator(np.random.MT19937(seed=1337))
 
     my_table = snt.testing.make_example_table(prng=prng, size=100_000)
@@ -62,7 +63,7 @@ def test_column_commnad():
         path = os.path.join(tmp, "my_table.zip")
 
         with snt.open(
-            path, "w", dtypes=my_table.dtypes, block_size=10_000
+            path, "w", dtypes_and_index_key_from=my_table, block_size=10_000
         ) as f:
             f.append_table(my_table)
 
@@ -82,13 +83,16 @@ def test_column_commnad():
 
 def test_preserves_dtypes_without_writing_anything():
     table = snt.SparseNumericTable(
-        dtypes=snt.testing.make_example_table_dtypes()
+        index_key="uid",
+        dtypes=snt.testing.make_example_table_dtypes(
+            index_dtype=("uid", "<i4")
+        ),
     )
 
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "table.zip")
 
-        with snt.open(path, "w", dtypes=table.dtypes) as f:
+        with snt.open(path, "w", dtypes_and_index_key_from=table) as f:
             pass  # do not write anything.
 
         with snt.open(path, "r") as f:
@@ -99,13 +103,16 @@ def test_preserves_dtypes_without_writing_anything():
 
 def test_preserves_dtypes_when_table_empty():
     table = snt.SparseNumericTable(
-        dtypes=snt.testing.make_example_table_dtypes()
+        index_key="uid",
+        dtypes=snt.testing.make_example_table_dtypes(
+            index_dtype=("uid", "<i4")
+        ),
     )
 
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "table.zip")
 
-        with snt.open(path, "w", dtypes=table.dtypes) as f:
+        with snt.open(path, "w", dtypes_and_index_key_from=table) as f:
             f.append_table(table)
 
         with snt.open(path, "r") as f:

@@ -6,15 +6,37 @@ import copy
 from dynamicsizerecarray import DynamicSizeRecarray
 
 from . import validating
-from . import logic
 
 
 class SparseNumericTable:
-    def __init__(self, dtypes=None):
+    """
+    parameters
+    ----------
+    index_key : str
+        Key of the index column which every level must have.
+    dtypes : dict
+        Dtypes of the individual levels.
+        Example: {
+            "level_a": [(index_key, "<i4", "column_x": "f4")],
+            "level_b": [(index_key, "<i4", "column_y": "i1", "column_z": "i4")],
+        }
+    """
+
+    def __init__(self, index_key, dtypes=None):
+        self.set_index_key(index_key=index_key)
+
         if dtypes is None:
             self._table = {}
         else:
+            validating.assert_all_levels_have_index_key(
+                dtypes=dtypes, index_key=self.index_key
+            )
             self._table = _init_tables_from_dtypes(dtypes=dtypes)
+
+    def set_index_key(self, index_key):
+        _index_key_str = str(index_key)
+        validating.assert_key_is_valid(_index_key_str)
+        self._index_key = copy.copy(_index_key_str)
 
     def __setitem__(self, level_key, level_recarray):
         lk = level_key
@@ -26,8 +48,15 @@ class SparseNumericTable:
         elif isinstance(lr, np.recarray):
             lr = DynamicSizeRecarray(recarray=lr)
         else:
-            raise ValueError("Expected DynamicSizeRecarray or np.recarray")
+            raise ValueError(
+                "Expected DynamicSizeRecarray or np.recarray, "
+                f"but got '{repr(lr):s}'"
+            )
         self._table[lk] = lr
+
+        validating.assert_all_levels_have_index_key(
+            dtypes=self.dtypes, index_key=self.index_key
+        )
 
     def __getitem__(self, level_key):
         return self._table[level_key]
@@ -72,21 +101,25 @@ class SparseNumericTable:
             out[lk] = self._table[lk].shape
         return out
 
+    @property
+    def index_key(self):
+        return copy.copy(self._index_key)
+
     def __repr__(self):
-        o = f"{self.__class__.__name__:s}"
-        o += f"()"
-        return o
+        return f"{self.__class__.__name__:s}(index_key='{self.index_key:s}')"
 
     def info(self):
         out = io.StringIO()
         out.write(self.__repr__())
         out.write("\n")
         for lk in self._table:
-            pad_key = f"    {lk:s} "
-            out.write(f"{pad_key:_<45s}[ {self._table[lk].shape[0]: 9_d} ]_\n")
+            out.write(
+                f'    "{lk:s}", (len={self._table[lk].shape[0]:_d}) = [\n'
+            )
             for ck in self._table[lk].dtype.names:
                 cd = self._table[lk].dtype[ck].str
-                out.write(f"        {ck:.<45s} {cd:s}\n")
+                out.write(f'        ("{ck:s}", "{cd:s}"),\n')
+            out.write(f"    ]\n")
         out.seek(0)
         return out.read()
 
@@ -129,33 +162,6 @@ def _init_tables_from_dtypes(dtypes):
     return tables
 
 
-def _sub_dtypes(dtypes, levels_and_columns=None):
-    if levels_and_columns is None:
-        return dtypes
-    out = {}
-    for lk in levels_and_columns:
-        out[lk] = []
-
-        if isinstance(levels_and_columns[lk], str):
-            if levels_and_columns[lk] == "__all__":
-                out[lk] = dtypes[lk]
-            else:
-                raise KeyError(
-                    "Expected column command to be in ['__all__']."
-                    f"But it is '{levels_and_columns[lk]:s}'."
-                )
-        else:
-            for ck in levels_and_columns[lk]:
-                dt = None
-                for item in dtypes[lk]:
-                    if item[0] == ck:
-                        dt = (ck, item[1])
-                assert dt is not None
-                out[lk].append(dt)
-
-    return out
-
-
 def _intersection(handle, index, levels=None):
     if levels is None:
         levels = handle.list_level_keys()
@@ -174,49 +180,6 @@ def _intersection(handle, index, levels=None):
         )
         inter = np.intersect1d(inter, next_indices)
     return inter
-
-
-def _query(
-    handle,
-    index=None,
-    indices=None,
-    levels_and_columns=None,
-    align_indices=False,
-):
-    sub_dtypes = _sub_dtypes(
-        dtypes=handle.dtypes, levels_and_columns=levels_and_columns
-    )
-
-    out = SparseNumericTable()
-    for lk in sub_dtypes:
-        if index is not None and indices is not None:
-            mask = logic.make_mask_of_right_in_left(
-                left_indices=handle._get_level_column(lk, index),
-                right_indices=indices,
-            )
-        else:
-            mask = np.ones(handle._get_len_level(lk), dtype=bool)
-
-        level_shape = np.sum(mask)
-
-        out[lk] = DynamicSizeRecarray(
-            dtype=sub_dtypes[lk],
-            shape=level_shape,
-        )
-
-        for ck, cdtype in sub_dtypes[lk]:
-            out[lk][ck] = handle._get_level_column(lk, ck)[mask]
-
-    if align_indices:
-        assert index is not None and indices is not None
-        out._table = logic.sort_table_on_common_indices(
-            table=out._table,
-            common_indices=indices,
-            index_key=index,
-        )
-
-    out.shrink_to_fit()
-    return out
 
 
 def dict_to_recarray(d):

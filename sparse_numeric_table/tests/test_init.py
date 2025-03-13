@@ -6,16 +6,23 @@ import tempfile
 import os
 
 
+def test_repr():
+    table = snt.SparseNumericTable(index_key="raletrale")
+    _repr = table.__repr__()
+    assert "SparseNumericTable(index_key='raletrale')" in _repr
+
+
 def test_from_records():
     prng = np.random.Generator(np.random.MT19937(seed=0))
     rnd = prng.uniform
 
     # define what your table will look like
     # -------------------------------------
+    index_dtype = ("i", "<u8")
     dtypes = {
-        "A": [("i", "<u8"), ("a", "<f8"), ("b", "<f8")],
-        "B": [("i", "<u8"), ("c", "<f8"), ("d", "<f8")],
-        "C": [("i", "<u8"), ("e", "<f8")],
+        "A": [index_dtype, ("a", "<f8"), ("b", "<f8")],
+        "B": [index_dtype, ("c", "<f8"), ("d", "<f8")],
+        "C": [index_dtype, ("e", "<f8")],
     }
 
     # populate the table using records
@@ -28,7 +35,9 @@ def test_from_records():
             # map the population of the sparse table onto many jobs
             # -----------------------------------------------------
             i = j * n
-            db = snt.SparseNumericTable(dtypes=dtypes)
+            db = snt.SparseNumericTable(
+                index_key=index_dtype[0], dtypes=dtypes
+            )
 
             db["A"].append_record({"i": i + 0, "a": rnd(), "b": rnd()})
             db["A"].append_record({"i": i + 1, "a": rnd(), "b": rnd()})
@@ -45,16 +54,17 @@ def test_from_records():
             path = os.path.join(tmp, "{:06d}.zip".format(j))
             job_result_paths.append(path)
             snt.testing.assert_dtypes_are_equal(a=db.dtypes, b=dtypes)
-            with snt.open(path, "w", dtypes=db.dtypes) as tout:
+            with snt.open(path, "w", dtypes_and_index_key_from=db) as tout:
                 tout.append_table(db)
 
         # reduce
         # ------
         full_path = os.path.join(tmp, "full.zip")
-        snt.archive.concatenate(
+        snt.concatenate_files(
             input_paths=job_result_paths,
             output_path=full_path,
             dtypes=dtypes,
+            index_key=index_dtype[0],
         )
         with snt.open(full_path, "r") as tin:
             full_table = tin.query()
@@ -68,7 +78,7 @@ def test_write_read_full_table():
 
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         zpath = os.path.join(tmp, "table.zip")
-        with snt.open(zpath, "w", dtypes=table.dtypes) as tout:
+        with snt.open(zpath, "w", dtypes_and_index_key_from=table) as tout:
             tout.append_table(table)
         with snt.open(zpath, "r") as tin:
             zback = tin.query()
@@ -82,7 +92,7 @@ def test_write_read_empty_table():
     empty = snt.testing.make_example_table(prng=prng, size=0)
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         zpath = os.path.join(tmp, "empty.zip")
-        with snt.open(zpath, "w", dtypes=empty.dtypes) as tout:
+        with snt.open(zpath, "w", dtypes_and_index_key_from=empty) as tout:
             tout.append_table(empty)
         with snt.open(zpath, "r") as tin:
             zback = tin.query()
@@ -105,12 +115,10 @@ def test_merge_common():
     my_common_table = snt.logic.cut_table_on_indices(
         table=my_table,
         common_indices=common_indices,
-        index_key="i",
     )
     my_sorted_common_table = snt.logic.sort_table_on_common_indices(
         table=my_common_table,
         common_indices=common_indices,
-        index_key="i",
     )
 
     np.testing.assert_array_equal(
@@ -255,14 +263,17 @@ def test_concatenate_several_tables():
                 table_i.dtypes,
                 table_i_dtypes,
             )
-            with snt.open(paths[-1], "w", dtypes=table_i.dtypes) as f:
+            with snt.open(
+                paths[-1], "w", dtypes_and_index_key_from=table_i
+            ) as f:
                 f.append_table(table_i)
 
         output_path = os.path.join(tmp, "full.zip")
-        snt.archive.concatenate(
+        snt.concatenate_files(
             input_paths=paths,
             output_path=output_path,
             dtypes=table_i_dtypes,
+            index_key=index_dtype[0],
         )
         with snt.open(output_path, "r") as tin:
             full_table = tin.query()
@@ -300,10 +311,11 @@ def test_concatenate_empty_list_of_paths():
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         output_path = os.path.join(tmp, "empty_table.tar")
 
-        snt.archive.concatenate(
+        snt.concatenate_files(
             input_paths=[],
             output_path=output_path,
             dtypes=dtypes,
+            index_key="uid",
         )
 
         with snt.open(output_path, "r") as tin:
@@ -321,7 +333,7 @@ def test_only_index_in_level():
         "B": [("uid", "<u8")],
     }
 
-    table = snt.SparseNumericTable(dtypes=dtypes)
+    table = snt.SparseNumericTable(dtypes=dtypes, index_key="uid")
 
     for i in np.arange(10):
         table["A"].append_record({"uid": i, "height": 10})
@@ -333,7 +345,7 @@ def test_only_index_in_level():
 
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "table_with_index_only_level.zip")
-        with snt.open(path, "w", dtypes=table.dtypes) as tout:
+        with snt.open(path, "w", dtypes_and_index_key_from=table) as tout:
             tout.append_table(table)
         with snt.open(path, "r") as tin:
             table_back = tin.query()

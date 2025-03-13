@@ -6,15 +6,30 @@ import gzip
 import copy
 
 from . import base
+from . import query
 
 
-def open(file, mode="r", dtypes=None, compress=False, block_size=262_144):
+def open(
+    file,
+    mode="r",
+    dtypes=None,
+    index_key=None,
+    dtypes_and_index_key_from=None,
+    compress=False,
+    block_size=262_144,
+):
     if str.lower(mode) == "r":
-        return Reader(file=file)
+        return SparseNumericTableReader(file=file)
     elif str.lower(mode) == "w":
-        assert dtypes is not None, "mode='w' requires dtypes."
-        return Writer(
-            file=file, dtypes=dtypes, compress=compress, block_size=block_size
+        dtypes, index_key = _get_dtypes_and_index_key(
+            dtypes, index_key, dtypes_and_index_key_from
+        )
+        return SparseNumericTableWriter(
+            file=file,
+            dtypes=dtypes,
+            index_key=index_key,
+            compress=compress,
+            block_size=block_size,
         )
     else:
         raise KeyError(
@@ -22,7 +37,7 @@ def open(file, mode="r", dtypes=None, compress=False, block_size=262_144):
         )
 
 
-class LevelBuffer:
+class SparseNumericTableLevelWriter:
     def __init__(
         self,
         zipfile,
@@ -101,21 +116,30 @@ class LevelBuffer:
         self.size = 0
 
 
-class Writer:
-    def __init__(self, file, dtypes, compress, block_size):
+class SparseNumericTableWriter:
+    def __init__(self, file, dtypes, index_key, compress, block_size):
         self.zipfile = zipfile.ZipFile(file=file, mode="w")
         self.compress = compress
         self.block_size = block_size
         self.dtypes = dtypes
+        self.index_key = index_key
         self.buffers = {}
+        self.write_index_key()
+
         for lk in self.dtypes:
-            self.buffers[lk] = LevelBuffer(
+            self.buffers[lk] = SparseNumericTableLevelWriter(
                 zipfile=self.zipfile,
                 level_key=lk,
                 level_dtype=self.dtypes[lk],
                 compress=self.compress,
                 block_size=self.block_size,
             )
+
+    def write_index_key(self):
+        path = "__index_key__.txt"
+        with self.zipfile.open(path, mode="w") as fout:
+            _index_key_bytes = self.index_key.encode()
+            fout.write(_index_key_bytes)
 
     def append_table(self, table):
         for lk in table:
@@ -136,29 +160,35 @@ class Writer:
         return f"{self.__class__.__name__:s}()"
 
 
-class Reader:
+class SparseNumericTableReader:
     def __init__(self, file):
         self.zipfile = zipfile.ZipFile(file=file, mode="r")
         self.infolist = self.zipfile.infolist()
 
         self.info = {}
+        self._index_key = None
+
         for item in self.infolist:
             oo = _properties_from_filename(filename=item.filename)
-            lk = oo["level_key"]
-            ck = oo["column_key"]
-            bk = oo["block_key"]
-            if lk not in self.info:
-                self.info[lk] = {}
 
-            if ck not in self.info[lk]:
-                self.info[lk][ck] = {}
+            if oo["is_index_key"]:
+                self._index_key = self.read_index_key(filename=item.filename)
+            else:
+                lk = oo["level_key"]
+                ck = oo["column_key"]
+                bk = oo["block_key"]
+                if lk not in self.info:
+                    self.info[lk] = {}
 
-            if bk not in self.info[lk][ck]:
-                self.info[lk][ck][bk] = {
-                    "filename": item.filename,
-                    "compressed": oo["compressed"],
-                    "dtype": oo["column_dtype_key"],
-                }
+                if ck not in self.info[lk]:
+                    self.info[lk][ck] = {}
+
+                if bk not in self.info[lk][ck]:
+                    self.info[lk][ck][bk] = {
+                        "filename": item.filename,
+                        "compressed": oo["compressed"],
+                        "dtype": oo["column_dtype_key"],
+                    }
 
         self.dtypes = {}
         for lk in self.list_level_keys():
@@ -171,6 +201,10 @@ class Reader:
                 assert len(block_dtypes) == 1
                 entry = list(block_dtypes)[0]
                 self.dtypes[lk].append((ck, entry))
+
+    @property
+    def index_key(self):
+        return copy.copy(self._index_key)
 
     def list_level_keys(self):
         return list(self.info.keys())
@@ -186,6 +220,11 @@ class Reader:
         first_column_key = list(self.info[level_key].keys())[0]
         first_column_in_level = self.read_column(level_key, first_column_key)
         return len(first_column_in_level)
+
+    def read_index_key(self, filename):
+        with self.zipfile.open(filename, "r") as fin:
+            _index_key_bytes = fin.read()
+            return _index_key_bytes.decode()
 
     def read_column(self, level_key, column_key):
         dtype = None
@@ -214,7 +253,7 @@ class Reader:
         levels_and_columns=None,
         align_indices=False,
     ):
-        return base._query(
+        return query._query(
             handle=self,
             index=index,
             indices=indices,
@@ -236,8 +275,15 @@ class Reader:
 
 
 def _properties_from_filename(filename):
-    filename, basename = posixpath.split(filename)
     out = {}
+    out["is_index_key"] = False
+
+    if filename == "__index_key__.txt":
+        out["is_index_key"] = True
+        return out
+
+    filename, basename = posixpath.split(filename)
+
     basename, ext = posixpath.splitext(basename)
     if ext == ".gz":
         out["compressed"] = True
@@ -257,9 +303,47 @@ def _properties_from_filename(filename):
     return out
 
 
-def concatenate(input_paths, output_path, dtypes):
-    with open(output_path, mode="w", dtypes=dtypes) as tout:
+def concatenate_files(
+    input_paths,
+    output_path,
+    dtypes=None,
+    index_key=None,
+    dtypes_and_index_key_from=None,
+):
+    dtypes, index_key = _get_dtypes_and_index_key(
+        dtypes, index_key, dtypes_and_index_key_from
+    )
+
+    with open(
+        output_path, mode="w", dtypes=dtypes, index_key=index_key
+    ) as tout:
         for input_path in input_paths:
             with open(input_path, mode="r") as tin:
                 part = tin.query()
                 tout.append_table(part)
+
+
+def _get_dtypes_and_index_key(dtypes, index_key, dtypes_and_index_key_from):
+    if dtypes_and_index_key_from is None:
+        assert dtypes is not None, (
+            "mode='w' requires 'dtypes' "
+            "when 'dtypes_and_index_key_from' is not set."
+        )
+        assert index_key is not None, (
+            "mode='w' requires 'index_key' "
+            "when 'dtypes_and_index_key_from' is not set."
+        )
+        return dtypes, index_key
+    else:
+        assert dtypes is None, (
+            "mode='w' with 'dtypes_and_index_key_from' "
+            "set can not also have 'dtypes' set."
+        )
+        assert index_key is None, (
+            "mode='w' with 'dtypes_and_index_key_from' "
+            "set can not also have 'index_key' set."
+        )
+        return (
+            dtypes_and_index_key_from.dtypes,
+            dtypes_and_index_key_from.index_key,
+        )

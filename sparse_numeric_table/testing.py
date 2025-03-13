@@ -100,7 +100,7 @@ def make_example_table(prng, size, start_index=0, index_dtype=("uid", "<u8")):
 
     example_table_dtypes = make_example_table_dtypes(index_dtype=index_dtype)
 
-    t = SparseNumericTable(dtypes=example_table_dtypes)
+    t = SparseNumericTable(dtypes=example_table_dtypes, index_key=idx)
     t["elementary_school"].append_recarray(
         dict_to_recarray(
             {

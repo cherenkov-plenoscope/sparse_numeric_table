@@ -45,7 +45,7 @@ def test_from_records():
             path = os.path.join(tmp, "{:06d}.zip".format(j))
             job_result_paths.append(path)
             snt.testing.assert_dtypes_are_equal(a=db.dtypes, b=dtypes)
-            with snt.archive.open(path, "w", dtypes=db.dtypes) as tout:
+            with snt.open(path, "w", dtypes=db.dtypes) as tout:
                 tout.append_table(db)
 
         # reduce
@@ -56,7 +56,7 @@ def test_from_records():
             output_path=full_path,
             dtypes=dtypes,
         )
-        with snt.archive.open(full_path, "r") as tin:
+        with snt.open(full_path, "r") as tin:
             full_table = tin.query()
 
     snt.testing.assert_dtypes_are_equal(a=full_table.dtypes, b=dtypes)
@@ -68,9 +68,9 @@ def test_write_read_full_table():
 
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         zpath = os.path.join(tmp, "table.zip")
-        with snt.archive.open(zpath, "w", dtypes=table.dtypes) as tout:
+        with snt.open(zpath, "w", dtypes=table.dtypes) as tout:
             tout.append_table(table)
-        with snt.archive.open(zpath, "r") as tin:
+        with snt.open(zpath, "r") as tin:
             zback = tin.query()
         snt.testing.assert_dtypes_are_equal(table.dtypes, zback.dtypes)
         snt.testing.assert_tables_are_equal(table, zback)
@@ -82,9 +82,9 @@ def test_write_read_empty_table():
     empty = snt.testing.make_example_table(prng=prng, size=0)
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         zpath = os.path.join(tmp, "empty.zip")
-        with snt.archive.open(zpath, "w", dtypes=empty.dtypes) as tout:
+        with snt.open(zpath, "w", dtypes=empty.dtypes) as tout:
             tout.append_table(empty)
-        with snt.archive.open(zpath, "r") as tin:
+        with snt.open(zpath, "r") as tin:
             zback = tin.query()
         snt.testing.assert_dtypes_are_equal(empty.dtypes, zback.dtypes)
         snt.testing.assert_tables_are_equal(empty, zback)
@@ -255,7 +255,7 @@ def test_concatenate_several_tables():
                 table_i.dtypes,
                 table_i_dtypes,
             )
-            with snt.archive.open(paths[-1], "w", dtypes=table_i.dtypes) as f:
+            with snt.open(paths[-1], "w", dtypes=table_i.dtypes) as f:
                 f.append_table(table_i)
 
         output_path = os.path.join(tmp, "full.zip")
@@ -264,7 +264,7 @@ def test_concatenate_several_tables():
             output_path=output_path,
             dtypes=table_i_dtypes,
         )
-        with snt.archive.open(output_path, "r") as tin:
+        with snt.open(output_path, "r") as tin:
             full_table = tin.query()
 
     snt.testing.assert_dtypes_are_equal(full_table.dtypes, table_i_dtypes)
@@ -306,7 +306,7 @@ def test_concatenate_empty_list_of_paths():
             dtypes=dtypes,
         )
 
-        with snt.archive.open(output_path, "r") as tin:
+        with snt.open(output_path, "r") as tin:
             empty_table = tin.query()
 
     snt.testing.assert_dtypes_are_equal(dtypes, empty_table.dtypes)
@@ -333,9 +333,9 @@ def test_only_index_in_level():
 
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "table_with_index_only_level.zip")
-        with snt.archive.open(path, "w", dtypes=table.dtypes) as tout:
+        with snt.open(path, "w", dtypes=table.dtypes) as tout:
             tout.append_table(table)
-        with snt.archive.open(path, "r") as tin:
+        with snt.open(path, "r") as tin:
             table_back = tin.query()
         snt.testing.assert_dtypes_are_equal(table_back.dtypes, dtypes)
         snt.testing.assert_tables_are_equal(table, table_back)

@@ -72,8 +72,10 @@ sparse tables
 
 from .version import __version__
 
+from .archive import open
+from .base import SparseNumericTable
+
 from . import archive
 from . import testing
 from . import logic
-from .base import SparseNumericTable
-from .base import dict_to_recarray
+from . import base

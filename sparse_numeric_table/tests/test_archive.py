@@ -12,12 +12,12 @@ def test_write_read_full_table():
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "my_table.zip")
 
-        with snt.archive.open(
+        with snt.open(
             path, "w", dtypes=my_table.dtypes, block_size=10_000
         ) as f:
             f.append_table(my_table)
 
-        with snt.archive.open(path, "r") as f:
+        with snt.open(path, "r") as f:
             my_table_back = f.query()
 
         snt.testing.assert_tables_are_equal(my_table, my_table_back)
@@ -32,12 +32,12 @@ def test_read_only_part_of_table():
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "my_table.zip")
 
-        with snt.archive.open(
+        with snt.open(
             path, "w", dtypes=my_table.dtypes, block_size=10_000
         ) as f:
             f.append_table(my_table)
 
-        with snt.archive.open(path, "r") as f:
+        with snt.open(path, "r") as f:
             partly_back = f.query(
                 levels_and_columns={
                     "elementary_school": ["uid", "num_friends"]
@@ -61,12 +61,12 @@ def test_column_commnad():
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "my_table.zip")
 
-        with snt.archive.open(
+        with snt.open(
             path, "w", dtypes=my_table.dtypes, block_size=10_000
         ) as f:
             f.append_table(my_table)
 
-        with snt.archive.open(path, "r") as f:
+        with snt.open(path, "r") as f:
             partly_back = f.query(
                 levels_and_columns={"elementary_school": "__all__"}
             )
@@ -88,10 +88,10 @@ def test_preserves_dtypes_without_writing_anything():
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "table.zip")
 
-        with snt.archive.open(path, "w", dtypes=table.dtypes) as f:
+        with snt.open(path, "w", dtypes=table.dtypes) as f:
             pass  # do not write anything.
 
-        with snt.archive.open(path, "r") as f:
+        with snt.open(path, "r") as f:
             back = f.query()
 
         snt.testing.assert_dtypes_are_equal(table.dtypes, back.dtypes)
@@ -105,10 +105,10 @@ def test_preserves_dtypes_when_table_empty():
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
         path = os.path.join(tmp, "table.zip")
 
-        with snt.archive.open(path, "w", dtypes=table.dtypes) as f:
+        with snt.open(path, "w", dtypes=table.dtypes) as f:
             f.append_table(table)
 
-        with snt.archive.open(path, "r") as f:
+        with snt.open(path, "r") as f:
             back = f.query()
 
         snt.testing.assert_dtypes_are_equal(table.dtypes, back.dtypes)

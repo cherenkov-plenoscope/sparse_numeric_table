@@ -75,6 +75,5 @@ from .version import __version__
 from . import archive
 from . import testing
 from . import logic
-from . import tar_format
 from .base import SparseNumericTable
 from .base import dict_to_recarray

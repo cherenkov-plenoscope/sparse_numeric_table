@@ -67,10 +67,6 @@ def test_write_read_full_table():
     table = snt.testing.make_example_table(prng=prng, size=1000 * 1000)
 
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
-        tpath = os.path.join(tmp, "table.tar")
-
-        # zip archive
-        # -----------
         zpath = os.path.join(tmp, "table.zip")
         with snt.archive.open(zpath, "w", dtypes=table.dtypes) as tout:
             tout.append_table(table)
@@ -79,31 +75,12 @@ def test_write_read_full_table():
         snt.testing.assert_dtypes_are_equal(table.dtypes, zback.dtypes)
         snt.testing.assert_tables_are_equal(table, zback)
 
-        # tape archive
-        # ------------
-        with pytest.warns(DeprecationWarning) as w:
-            snt.tar_format.write(path=tpath, table=table)
-            tback = snt.tar_format.read(path=tpath)
-            snt.testing.assert_dtypes_are_equal(table.dtypes, tback.dtypes)
-            snt.testing.assert_tables_are_equal(table, tback)
-
 
 def test_write_read_empty_table():
     prng = np.random.Generator(np.random.MT19937(seed=1337))
 
     empty = snt.testing.make_example_table(prng=prng, size=0)
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
-        # tape archive
-        # ------------
-        with pytest.warns(DeprecationWarning) as w:
-            tpath = os.path.join(tmp, "empty.tar")
-            snt.tar_format.write(path=tpath, table=empty)
-            tback = snt.tar_format.read(path=tpath)
-            snt.testing.assert_dtypes_are_equal(tback.dtypes, empty.dtypes)
-            snt.testing.assert_tables_are_equal(tback, empty)
-
-        # zip archive
-        # -----------
         zpath = os.path.join(tmp, "empty.zip")
         with snt.archive.open(zpath, "w", dtypes=empty.dtypes) as tout:
             tout.append_table(empty)
@@ -355,22 +332,10 @@ def test_only_index_in_level():
     snt.testing.assert_dtypes_are_equal(table.dtypes, dtypes)
 
     with tempfile.TemporaryDirectory(prefix="test_sparse_table") as tmp:
-        path = os.path.join(tmp, "table_with_index_only_level.tar")
-
-        # zip archive
-        # -----------
+        path = os.path.join(tmp, "table_with_index_only_level.zip")
         with snt.archive.open(path, "w", dtypes=table.dtypes) as tout:
             tout.append_table(table)
         with snt.archive.open(path, "r") as tin:
             table_back = tin.query()
-        snt.testing.assert_dtypes_are_equal(table_back.dtypes, dtypes)
-        snt.testing.assert_tables_are_equal(table, table_back)
-
-        # tar
-        # ---
-        with pytest.warns(DeprecationWarning) as w:
-            snt.tar_format.write(path=path, table=table)
-            table_back = snt.tar_format.read(path=path)
-
         snt.testing.assert_dtypes_are_equal(table_back.dtypes, dtypes)
         snt.testing.assert_tables_are_equal(table, table_back)

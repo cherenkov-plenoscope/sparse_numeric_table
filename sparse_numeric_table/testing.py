@@ -1,4 +1,4 @@
-from .base import SparseNumericTable
+from ._sparse_numeric_table import SparseNumericTable
 from . import validating
 
 import numpy as np

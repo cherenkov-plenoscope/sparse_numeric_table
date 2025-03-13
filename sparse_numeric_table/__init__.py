@@ -74,7 +74,7 @@ from .version import __version__
 
 from .archive import open
 from .archive import concatenate_files
-from .base import SparseNumericTable
+from ._sparse_numeric_table import SparseNumericTable
 
 from . import logic
 from . import validating

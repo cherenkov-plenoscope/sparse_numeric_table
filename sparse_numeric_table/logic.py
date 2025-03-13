@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from dynamicsizerecarray import DynamicSizeRecarray
 
-from .base import SparseNumericTable
+from ._sparse_numeric_table import SparseNumericTable
 
 
 def make_mask_of_right_in_left(left_indices, right_indices):

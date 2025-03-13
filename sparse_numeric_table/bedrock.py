@@ -3,7 +3,32 @@ from . import logic
 
 import copy
 import numpy as np
+import pandas
 from dynamicsizerecarray import DynamicSizeRecarray
+
+
+def dict_to_recarray(d):
+    return pandas.DataFrame(d).to_records(index=False)
+
+
+def _intersection(handle, index, levels=None):
+    if levels is None:
+        levels = handle.list_level_keys()
+
+    if len(levels) == 0:
+        return []
+
+    first_indices = handle._get_level_column(
+        level_key=levels[0], column_key=index
+    )
+    inter = first_indices
+    for ll in range(1, len(levels)):
+        level_key = levels[ll]
+        next_indices = handle._get_level_column(
+            level_key=level_key, column_key=index
+        )
+        inter = np.intersect1d(inter, next_indices)
+    return inter
 
 
 def _sub_dtypes(dtypes, levels_and_columns=None):

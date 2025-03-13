@@ -1,4 +1,3 @@
-import pandas as pd
 import numpy as np
 import io
 import copy
@@ -6,6 +5,7 @@ import copy
 from dynamicsizerecarray import DynamicSizeRecarray
 
 from . import validating
+from . import bedrock
 
 
 class SparseNumericTable:
@@ -136,7 +136,7 @@ class SparseNumericTable:
             self[lk].append_recarray(other[lk])
 
     def intersection(self, index, levels=None):
-        return _intersection(handle=self, index=index, levels=levels)
+        return bedrock._intersection(handle=self, index=index, levels=levels)
 
     def query(
         self,
@@ -145,7 +145,7 @@ class SparseNumericTable:
         levels_and_columns=None,
         align_indices=False,
     ):
-        return _query(
+        return bedrock._query(
             handle=self,
             index=index,
             indices=indices,
@@ -160,27 +160,3 @@ def _init_tables_from_dtypes(dtypes):
     for level_key in dtypes:
         tables[level_key] = DynamicSizeRecarray(dtype=dtypes[level_key])
     return tables
-
-
-def _intersection(handle, index, levels=None):
-    if levels is None:
-        levels = handle.list_level_keys()
-
-    if len(levels) == 0:
-        return []
-
-    first_indices = handle._get_level_column(
-        level_key=levels[0], column_key=index
-    )
-    inter = first_indices
-    for ll in range(1, len(levels)):
-        level_key = levels[ll]
-        next_indices = handle._get_level_column(
-            level_key=level_key, column_key=index
-        )
-        inter = np.intersect1d(inter, next_indices)
-    return inter
-
-
-def dict_to_recarray(d):
-    return pd.DataFrame(d).to_records(index=False)

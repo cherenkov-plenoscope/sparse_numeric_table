@@ -80,4 +80,4 @@ from . import archive
 from . import testing
 from . import logic
 from . import base
-from . import query
+from . import bedrock

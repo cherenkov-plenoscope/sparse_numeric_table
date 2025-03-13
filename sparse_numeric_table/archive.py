@@ -5,8 +5,7 @@ import dynamicsizerecarray
 import gzip
 import copy
 
-from . import base
-from . import query
+from . import bedrock
 
 
 def open(
@@ -244,7 +243,7 @@ class SparseNumericTableReader:
         return out.to_recarray()
 
     def intersection(self, index, levels=None):
-        return base._intersection(handle=self, index=index, levels=levels)
+        return bedrock._intersection(handle=self, index=index, levels=levels)
 
     def query(
         self,
@@ -253,7 +252,7 @@ class SparseNumericTableReader:
         levels_and_columns=None,
         align_indices=False,
     ):
-        return query._query(
+        return bedrock._query(
             handle=self,
             index=index,
             indices=indices,

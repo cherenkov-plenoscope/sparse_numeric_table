@@ -1,4 +1,4 @@
-from .base import dict_to_recarray
+from .bedrock import dict_to_recarray
 from .base import SparseNumericTable
 
 from . import validating

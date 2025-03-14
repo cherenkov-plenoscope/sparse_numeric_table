@@ -69,7 +69,13 @@ class SparseNumericTable:
     def append(self, other):
         """
         Append the levels of another table to the levels of this table without
-        overwriting the levels of this table.
+        overwriting the levels of this table. If a level in 'other' does not
+        exist in 'self', the level will be created in 'self'.
+
+        Parameters
+        ----------
+        other : SparseNumericTable
+            Will be appended to 'self'.
         """
         for level_key in other.keys():
             _level_recarray = other[level_key].to_recarray()
@@ -143,18 +149,6 @@ class SparseNumericTable:
             out.write(f"    ]\n")
         out.seek(0)
         return out.read()
-
-    def append(self, other):
-        """
-        Append another table.
-
-        Parameters
-        ----------
-        other : SparseNumericTable (or dict)
-            The other table will be appended to this one (self).
-        """
-        for lk in other:
-            self[lk].append_recarray(other[lk])
 
     def intersection(self, index, levels=None):
         return _base._intersection(handle=self, index=index, levels=levels)

@@ -30,7 +30,6 @@ setuptools.setup(
         "numpy",
         "pandas",
         "dynamicsizerecarray>=0.0.12",
-        "sequential_tar>=0.0.4",
     ],
     classifiers=[
         "Programming Language :: Python :: 3",

@@ -3,39 +3,38 @@ Sparse Numeric Table
 ####################
 |TestStatus| |PyPiStatus| |BlackStyle| |BlackPackStyle| |MITLicenseBadge|
 
-
 Query, write, and read sparse, numeric tables.
 
 
-Restictions
-===========
-- Only numeric fields
-- Index is unsigned integer
+Install
+=======
+.. code-block:: bash
 
-Pros
+    pip install sparse-numeric-table-sebastian-achim-mueller
+
+Test
 ====
-- Fast read / write with ``numpy`` binaries.
-- Just a ``dict`` of ``numpy.recarray``'s. No classes. No stateful functions.
-- Easy to explore files in the tapearchive ``.tar``.
+.. code-block:: bash
 
-Features
-========
-- Read from file / write to file.
-- Create from 'records' (A list of dicts, each representing one row in the table)
-- Query, cut, and merge on row-indices (columns can be omitted for speed)
-- Concatenate files.
+    pytest .
+
+
+Fileformat
+==========
+Efficient write and read using binary blocks (``numpy`` dumps) in a ``zip`` file.
+On read, you only need to read the columns and indices you need. No need to read the
+entire file. Files can be explored with any ``zip`` file reader.
 
 
 *****
 Usage
 *****
 
+See ``./sparse_numeric_table/tests`` for examples.
 
-See ``./sparse_numeric_table/tests``.
-
-1st) You create a ``dict`` representing the structure and ``dtype`` of your table.
-Columns which only appear together are bundeled into a ``level`` . Each ``level`` has an index to merge and join with other ``level`` 's.
-
+1st) You create a ``dict`` representing the dtypes of your table.
+Columns which only appear together are bundeled into a ``level`` .
+Each ``level`` has an index to merge and join with other ``levels``.
 
 .. code-block:: python
 
@@ -55,7 +54,8 @@ Columns which only appear together are bundeled into a ``level`` . Each ``level`
     }
 
 
-Here ``A`` , ``B`` , and ``C`` are the ``level`` -keys. ``a, ... , n`` are the column-keys.
+Here ``A`` , ``B`` , and ``C`` are the ``level`` keys.
+``a, ... , n`` are the column keys.
 
 2nd) You create/read/write the table.
 

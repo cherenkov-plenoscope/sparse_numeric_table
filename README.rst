@@ -3,8 +3,11 @@ Sparse Numeric Table
 ####################
 |TestStatus| |PyPiStatus| |BlackStyle| |BlackPackStyle| |MITLicenseBadge|
 
-Query, write, and read sparse, numeric tables.
-
+Query, write, read, and dynamically grow a sparse numeric table.
+I do love ``pandas.DataFrame`` and I do love ``numpy.recarray``.
+But when the table is sparse and still won't fit into your memory one needs
+to combine the best of ``pandas``, ``numpy`` and ``zipfile`` to get the job done.
+This is the Sparse Numeric Table.
 
 Install
 =======
@@ -17,6 +20,8 @@ Test
 .. code-block:: bash
 
     pytest .
+
+
 
 
 Fileformat

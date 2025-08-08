@@ -133,11 +133,13 @@ class SparseNumericTable:
         return copy.copy(self._index_key)
 
     def __repr__(self):
-        return f"{self.__class__.__name__:s}(index_key='{self.index_key:s}')"
+        return self.info()
 
     def info(self):
+        _head = f"{self.__class__.__name__:s}(index_key='{self.index_key:s}')"
+
         out = io.StringIO()
-        out.write(self.__repr__())
+        out.write(_head)
         out.write("\n")
         for lk in self._table:
             out.write(

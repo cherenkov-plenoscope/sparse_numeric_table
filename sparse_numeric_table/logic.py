@@ -130,6 +130,7 @@ def cut_table_on_indices(
     index_key : str (None)
         Key of the index column.
     """
+    common_indices = np.asarray(common_indices)
     index_key = _use_index_key_of_table_if_None(table, index_key)
     level_keys = _use_level_keys_of_table_if_None(table, level_keys)
 
@@ -156,6 +157,7 @@ def sort_table_on_common_indices(table, common_indices, index_key=None):
     index_key : str (None)
         Key of the index column.
     """
+    common_indices = np.asarray(common_indices)
     index_key = _use_index_key_of_table_if_None(table, index_key)
 
     common_order_args = np.argsort(common_indices)
@@ -195,6 +197,7 @@ def cut_and_sort_table_on_indices(
     index_key : str (None)
         Key of the index column.
     """
+    common_indices = np.asarray(common_indices)
     index_key = _use_index_key_of_table_if_None(table, index_key)
 
     out = cut_table_on_indices(

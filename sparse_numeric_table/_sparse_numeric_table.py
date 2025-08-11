@@ -81,7 +81,7 @@ class SparseNumericTable:
             _level_recarray = other[level_key].to_recarray()
 
             if level_key in self.keys():
-                self[level_key].append_recarray(_level_recarray)
+                self[level_key].append(_level_recarray)
             else:
                 self[level_key] = _level_recarray
 

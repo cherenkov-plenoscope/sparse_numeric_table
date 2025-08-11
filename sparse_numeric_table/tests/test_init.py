@@ -39,17 +39,17 @@ def test_from_records():
                 index_key=index_dtype[0], dtypes=dtypes
             )
 
-            db["A"].append_record({"i": i + 0, "a": rnd(), "b": rnd()})
-            db["A"].append_record({"i": i + 1, "a": rnd(), "b": rnd()})
-            db["A"].append_record({"i": i + 2, "a": rnd(), "b": rnd()})
-            db["A"].append_record({"i": i + 3, "a": rnd(), "b": rnd()})
-            db["A"].append_record({"i": i + 4, "a": rnd(), "b": rnd()})
+            db["A"].append({"i": i + 0, "a": rnd(), "b": rnd()})
+            db["A"].append({"i": i + 1, "a": rnd(), "b": rnd()})
+            db["A"].append({"i": i + 2, "a": rnd(), "b": rnd()})
+            db["A"].append({"i": i + 3, "a": rnd(), "b": rnd()})
+            db["A"].append({"i": i + 4, "a": rnd(), "b": rnd()})
 
-            db["B"].append_record({"i": i + 0, "c": rnd(), "d": 5 * rnd()})
-            db["B"].append_record({"i": i + 3, "c": rnd(), "d": 5 * rnd()})
+            db["B"].append({"i": i + 0, "c": rnd(), "d": 5 * rnd()})
+            db["B"].append({"i": i + 3, "c": rnd(), "d": 5 * rnd()})
 
             if rnd() > 0.9:
-                db["C"].append_record({"i": i + 3, "e": -rnd()})
+                db["C"].append({"i": i + 3, "e": -rnd()})
 
             path = os.path.join(tmp, "{:06d}.zip".format(j))
             job_result_paths.append(path)
@@ -336,10 +336,10 @@ def test_only_index_in_level():
     table = snt.SparseNumericTable(dtypes=dtypes, index_key="uid")
 
     for i in np.arange(10):
-        table["A"].append_record({"uid": i, "height": 10})
+        table["A"].append({"uid": i, "height": 10})
 
     for i in prng.choice(table["A"]["uid"], 5):
-        table["B"].append_record({"uid": i})
+        table["B"].append({"uid": i})
 
     snt.testing.assert_dtypes_are_equal(table.dtypes, dtypes)
 

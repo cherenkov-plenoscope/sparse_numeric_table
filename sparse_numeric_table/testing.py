@@ -104,7 +104,7 @@ def make_example_table(prng, size, start_index=0, index_dtype=("uid", "<u8")):
     example_table_dtypes = make_example_table_dtypes(index_dtype=index_dtype)
 
     t = SparseNumericTable(dtypes=example_table_dtypes, index_key=idx)
-    t["elementary_school"].append_recarray(
+    t["elementary_school"].append(
         dict_to_recarray(
             {
                 idx: start_index + np.arange(size).astype(idx_dtype),
@@ -116,7 +116,7 @@ def make_example_table(prng, size, start_index=0, index_dtype=("uid", "<u8")):
         )
     )
     high_school_size = size // 10
-    t["high_school"].append_recarray(
+    t["high_school"].append(
         dict_to_recarray(
             {
                 idx: prng.choice(
@@ -133,7 +133,7 @@ def make_example_table(prng, size, start_index=0, index_dtype=("uid", "<u8")):
         )
     )
     university_size = high_school_size // 10
-    t["university"].append_recarray(
+    t["university"].append(
         dict_to_recarray(
             {
                 idx: prng.choice(

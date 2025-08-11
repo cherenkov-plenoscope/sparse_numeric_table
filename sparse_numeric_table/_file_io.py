@@ -267,7 +267,7 @@ class SparseNumericTableReader:
                 if self.info[level_key][column_key][block_key]["compressed"]:
                     payload = gzip.decompress(payload)
                 block = np.frombuffer(payload, dtype=dtype)
-                out.append_recarray(block)
+                out.append(block)
         return out.to_recarray()
 
     def intersection(self, index, levels=None):

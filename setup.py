@@ -29,7 +29,7 @@ setuptools.setup(
     install_requires=[
         "numpy",
         "pandas",
-        "dynamicsizerecarray>=0.0.12",
+        "dynamicsizerecarray>=0.1.0",
     ],
     classifiers=[
         "Programming Language :: Python :: 3",

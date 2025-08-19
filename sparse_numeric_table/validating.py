@@ -70,7 +70,7 @@ def assert_dtypes_are_valid(dtypes):
         for column_key, column_dtype in dtypes[level_key]:
             assert_key_is_valid(column_key)
             assert column_dtype in DTYPES, (
-                f"Level: {level_key:s}, column: {column_key:s} "
-                f"has dtype: {column_dtype:s} which is not a valid "
-                "for sparse_numeric_table."
+                f"Level '{level_key:s}', column '{column_key:s}' "
+                f"has dtype '{column_dtype:s}' which is not in "
+                f"({str.join(', ', DTYPES):s})."
             )

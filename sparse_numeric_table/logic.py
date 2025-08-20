@@ -35,9 +35,38 @@ def intersection(list_of_lists_of_indices):
     -------
     [4, 5, 6] = intersection([[1,2,3,4,5,6], [3,4,5,6,7,8], [4,5,6,7,8,9,10]])
     """
-    inter = list_of_lists_of_indices[0]
+    lol = []
     for i in range(len(list_of_lists_of_indices)):
-        inter = np.intersect1d(inter, list_of_lists_of_indices[i])
+        lol.append(np.asarray(list_of_lists_of_indices[i]))
+
+    # This is a workaround to avoid seemingly uneccessary conversion to
+    # 'float' in case of 'int' and 'uint'.
+    different_dtypes = set()
+    for i in range(len(lol)):
+        different_dtypes.add(lol[i].dtype)
+    if len(different_dtypes) > 1:
+        has_int = False
+        has_uint = False
+        has_float = False
+        has_unknown = False
+        for dt in different_dtypes:
+            if dt.name.startswith("int"):
+                has_int = True
+            elif dt.name.startswith("uint"):
+                has_uint = True
+            elif dt.name.startswith("float"):
+                has_float = True
+            else:
+                has_unknown = True
+
+        if (has_int and has_uint) and not (has_float or has_unknown):
+            # Forcing 'int' here will avoid conversion to 'float'.
+            for i in range(len(lol)):
+                lol[i] = np.asarray(lol[i], dtype=int)
+
+    inter = lol[0]
+    for i in range(len(lol)):
+        inter = np.intersect1d(inter, lol[i])
     return inter
 
 

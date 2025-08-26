@@ -27,47 +27,139 @@ def make_mask_of_right_in_left(left_indices, right_indices):
     return mask
 
 
-def intersection(list_of_lists_of_indices):
+def intersection(*args):
     """
-    Returns the common indices among the lists of indices.
+    Returns the logical intersection of indices among the '*args'.
+
+    Parameters
+    ----------
+    *args : variable number of array like
+        Lists of indices.
+
+    Returns
+    -------
+    intersection : numpy.array(dtype=int)
 
     Example
     -------
-    [4, 5, 6] = intersection([[1,2,3,4,5,6], [3,4,5,6,7,8], [4,5,6,7,8,9,10]])
+    [4, 5, 6] = intersection([1,2,3,4,5,6], [3,4,5,6,7,8], [4,5,6,7,8,9,10])
+
     """
-    lol = []
-    for i in range(len(list_of_lists_of_indices)):
-        lol.append(np.asarray(list_of_lists_of_indices[i]))
+    arrs = [_asarray(item) for item in args]
 
-    # This is a workaround to avoid seemingly uneccessary conversion to
-    # 'float' in case of 'int' and 'uint'.
-    different_dtypes = set()
-    for i in range(len(lol)):
-        different_dtypes.add(lol[i].dtype)
-    if len(different_dtypes) > 1:
-        has_int = False
-        has_uint = False
-        has_float = False
-        has_unknown = False
-        for dt in different_dtypes:
-            if dt.name.startswith("int"):
-                has_int = True
-            elif dt.name.startswith("uint"):
-                has_uint = True
-            elif dt.name.startswith("float"):
-                has_float = True
+    num = len(arrs)
+
+    if num == 0:
+        return np.array([], dtype=int)
+    else:
+        out = _array_to_set(arrs[0])
+        for i in range(1, num):
+            out = out.intersection(_array_to_set(arrs[i]))
+        return np.asarray(list(out), dtype=int)
+
+
+def difference(first, *others):
+    """
+    Returns the logical difference of indices in between 'first' and 'others'.
+
+    Parameters
+    ----------
+    first : array like
+        List of arrays to be subtracted from.
+    *others : variable number of array like
+        Lists being subtracted from 'first'.
+
+    Returns
+    -------
+    difference : numpy.array(dtype=int)
+
+    Example
+    -------
+    [5] = difference([1,2,3,4,5,6], [2,4,6], [1,2,3])
+    """
+    afirst = _asarray(first)
+    sfirst = _array_to_set(afirst)
+    sothers = _union_as_set(*others)
+    diff = sfirst.difference(sothers)
+    return np.asarray(list(diff), dtype=int)
+
+
+def union(*args):
+    """
+    Returns the logical union of indices in '*args'.
+
+    Parameters
+    ----------
+    *args : variable number of array like
+        Lists of indices.
+
+    Returns
+    -------
+    union : numpy.array(dtype=int)
+
+    Example
+    -------
+    [1,2,3,4,5] = union([[1], [2], [3,4,5], [])
+    """
+    out = _union_as_set(*args)
+    return np.asarray(list(out), dtype=int)
+
+
+def _union_as_set(*args):
+    arrs = [_asarray(item) for item in args]
+
+    num = len(arrs)
+    if num == 0:
+        return set()
+    else:
+        out = _array_to_set(arrs[0])
+        for i in range(1, num):
+            s = _array_to_set(arrs[i])
+            out = set.union(out, s)
+    return out
+
+
+def _array_to_set(a):
+    s = set(a)
+    if len(s) < a.shape[0]:
+        d = {}
+        for i, v in enumerate(a):
+            if v in d:
+                d[v].append(i)
             else:
-                has_unknown = True
+                d[v] = [i]
+        report = ""
+        for v in d:
+            if len(d[v]) > 1:
+                report += (
+                    f"{{value={v:d}, indices=["
+                    + str.join(",", [f"{i:d}" for i in d[v]])
+                    + "]}, "
+                )
+        msg = (
+            "Expected int/uint values in array to be unique. "
+            f"But these values are not: {report:s}."
+        )
+        raise AssertionError(msg)
+    return s
 
-        if (has_int and has_uint) and not (has_float or has_unknown):
-            # Forcing 'int' here will avoid conversion to 'float'.
-            for i in range(len(lol)):
-                lol[i] = np.asarray(lol[i], dtype=int)
 
-    inter = lol[0]
-    for i in range(len(lol)):
-        inter = np.intersect1d(inter, lol[i])
-    return inter
+def _asarray(x):
+    a = np.asarray(x)
+    is_empty_anyhow = a.shape[0] == 0
+    if not _is_int_uint_like_dtype(a.dtype) and not is_empty_anyhow:
+        msg = f"Expected int/uint like dtype but got '{a.dtype.name:s}'."
+        raise AssertionError(msg)
+    return np.asarray(x, int)
+
+
+def _is_int_uint_like_dtype(dtype):
+    if dtype.name.startswith("int"):
+        return True
+    elif dtype.name.startswith("uint"):
+        return True
+    else:
+        return False
 
 
 def _use_index_key_of_table_if_None(table, index_key):

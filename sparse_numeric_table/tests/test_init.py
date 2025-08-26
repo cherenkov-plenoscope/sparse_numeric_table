@@ -109,7 +109,7 @@ def test_merge_common():
     )
 
     common_indices = snt.logic.intersection(
-        [my_table[lvl]["i"] for lvl in my_table]
+        *[my_table[lvl]["i"] for lvl in my_table]
     )
 
     my_common_table = snt.logic.cut_table_on_indices(

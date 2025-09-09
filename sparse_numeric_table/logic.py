@@ -170,7 +170,7 @@ def _use_level_keys_of_table_if_None(table, level_keys):
         return level_keys
 
 
-def cut_level_on_indices(level, indices, index_key, column_keys=None):
+def _cut_level_on_indices(level, indices, index_key, column_keys=None):
     """
     Returns a level (recarray) only containing the row-indices in 'indices'.
 
@@ -226,7 +226,7 @@ def cut_table_on_indices(
 
     out = SparseNumericTable(index_key=index_key)
     for level_key in level_keys:
-        out[level_key] = cut_level_on_indices(
+        out[level_key] = _cut_level_on_indices(
             level=table[level_key],
             indices=common_indices,
             index_key=index_key,

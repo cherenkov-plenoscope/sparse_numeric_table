@@ -222,10 +222,10 @@ def sort_table_on_common_indices(table, common_indices):
     """
     common_indices = np.asarray(common_indices)
 
-    common_order_args = np.argsort(common_indices)
-    common_inv_order = np.zeros(shape=common_indices.shape, dtype=int)
-    common_inv_order[common_order_args] = np.arange(len(common_indices))
-    del common_order_args
+    order = np.argsort(common_indices)
+    inv_order = np.zeros(shape=common_indices.shape, dtype=int)
+    inv_order[order] = np.arange(len(common_indices))
+    del order
 
     out = SparseNumericTable(index_key=table.index_key)
     for lk in table:
@@ -233,7 +233,7 @@ def sort_table_on_common_indices(table, common_indices):
         level_order_args = np.argsort(level[table.index_key])
         level_sorted = level[level_order_args]
         del level_order_args
-        level_same_order_as_common = level_sorted[common_inv_order]
+        level_same_order_as_common = level_sorted[inv_order]
         out[lk] = level_same_order_as_common
     return out
 

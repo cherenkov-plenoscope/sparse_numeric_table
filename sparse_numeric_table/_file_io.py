@@ -6,6 +6,7 @@ import gzip
 import copy
 
 from . import _base
+from . import logic
 
 
 def open(
@@ -41,7 +42,7 @@ def open(
     compress : bool
         Compress internal blocks using gzip when True.
     block_size : int (default=262_144)
-        The maximum size in bytes of a level block.
+        The maximum size of a level block.
     """
     if str.lower(mode) == "r":
         return SparseNumericTableReader(file=file)
@@ -199,7 +200,7 @@ class SparseNumericTableReader:
             oo = _properties_from_filename(filename=item.filename)
 
             if oo["is_index_key"]:
-                self._index_key = self.read_index_key(filename=item.filename)
+                self._index_key = self._read_index_key(filename=item.filename)
             else:
                 lk = oo["level_key"]
                 ck = oo["column_key"]
@@ -239,50 +240,75 @@ class SparseNumericTableReader:
     def list_column_keys(self, level_key):
         return list(self.info[level_key].keys())
 
-    def _get_level_column(self, level_key, column_key):
-        return self.read_column(level_key, column_key)
+    def _get_level(self, level_key, column_keys, indices=None):
+        return self._read_level(
+            level_key=level_key,
+            column_keys=column_keys,
+            indices=indices,
+        )
 
-    def _get_len_level(self, level_key):
-        out = 0
-        first_column_key = list(self.info[level_key].keys())[0]
-        first_column_in_level = self.read_column(level_key, first_column_key)
-        return len(first_column_in_level)
-
-    def read_index_key(self, filename):
+    def _read_index_key(self, filename):
         with self.zipfile.open(filename, "r") as fin:
             _index_key_bytes = fin.read()
             return _index_key_bytes.decode()
 
-    def read_column(self, level_key, column_key):
-        dtype = None
-        for item in self.dtypes[level_key]:
-            if item[0] == column_key:
-                dtype = [(column_key, item[1])]
-        out = dynamicsizerecarray.DynamicSizeRecarray(dtype=dtype)
+    def _read_level_column_block(self, level_key, column_key, block_key):
+        filename = self.info[level_key][column_key][block_key]["filename"]
+        with self.zipfile.open(filename, "r") as fin:
+            payload = fin.read()
+        if self.info[level_key][column_key][block_key]["compressed"]:
+            payload = gzip.decompress(payload)
+        block = np.frombuffer(
+            payload, dtype=self.info[level_key][column_key][block_key]["dtype"]
+        )
+        return block
 
-        for block_key in self.info[level_key][column_key]:
-            filename = self.info[level_key][column_key][block_key]["filename"]
-            with self.zipfile.open(filename, "r") as fin:
-                payload = fin.read()
-                if self.info[level_key][column_key][block_key]["compressed"]:
-                    payload = gzip.decompress(payload)
-                block = np.frombuffer(payload, dtype=dtype)
-                out.append(block)
-        return out.to_recarray()
+    def _read_level(self, level_key, column_keys, indices=None):
+        out_dtype = _base._sub_level_dtypes(
+            level_dtype=self.dtypes[level_key],
+            column_keys=column_keys,
+        )
+        out = dynamicsizerecarray.DynamicSizeRecarray(dtype=out_dtype)
 
-    def intersection(self, index, levels=None):
-        return _base._intersection(handle=self, index=index, levels=levels)
+        for block_key in self.info[level_key][self.index_key]:
+            level_block_indices = self._read_level_column_block(
+                level_key=level_key,
+                column_key=self.index_key,
+                block_key=block_key,
+            )
+            level_block = np.recarray(
+                shape=level_block_indices.shape[0], dtype=out_dtype
+            )
+            for column_key, _ in out_dtype:
+                level_block[column_key] = self._read_level_column_block(
+                    level_key=level_key,
+                    column_key=column_key,
+                    block_key=block_key,
+                )
+            if indices is not None:
+                level_block_mask = logic.make_mask_of_right_in_left(
+                    left_indices=level_block_indices,
+                    right_indices=indices,
+                )
+            else:
+                level_block_mask = np.ones(
+                    shape=level_block_indices.shape[0],
+                    dtype=bool,
+                )
+            level_block_part = level_block[level_block_mask]
+            out.append(level_block_part)
+
+        out.shrink_to_fit()
+        return out
 
     def query(
         self,
-        index=None,
         indices=None,
         levels_and_columns=None,
         align_indices=False,
     ):
         return _base._query(
             handle=self,
-            index=index,
             indices=indices,
             levels_and_columns=levels_and_columns,
             align_indices=align_indices,

@@ -3,6 +3,7 @@ import numpy as np
 from dynamicsizerecarray import DynamicSizeRecarray
 
 from ._sparse_numeric_table import SparseNumericTable
+from . import _base
 
 
 def make_mask_of_right_in_left(left_indices, right_indices):
@@ -19,12 +20,9 @@ def make_mask_of_right_in_left(left_indices, right_indices):
     -------
     [0, 1, 0, 0] = make_mask_of_right_in_left([1,2,3,4], [0,2,9])
     """
-    left_df = pd.DataFrame({"i": left_indices})
-    right_df = pd.DataFrame({"i": right_indices})
-    mask_df = pd.merge(left_df, right_df, on="i", how="left", indicator=True)
-    indicator_df = mask_df["_merge"]
-    mask = np.array(indicator_df == "both", dtype=bool)
-    return mask
+    return _base.make_mask_of_right_in_left(
+        left_indices=left_indices, right_indices=right_indices
+    )
 
 
 def intersection(*args):

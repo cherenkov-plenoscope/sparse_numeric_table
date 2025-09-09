@@ -2,60 +2,73 @@ from ._sparse_numeric_table import SparseNumericTable
 from . import logic
 
 import copy
+import pandas as pd
 import numpy as np
 from dynamicsizerecarray import DynamicSizeRecarray
 
 
-def _intersection(handle, index, levels=None):
-    if levels is None:
-        levels = handle.list_level_keys()
+def make_mask_of_right_in_left(left_indices, right_indices):
+    """
+    Returns a mask for left indices indicating wheter a right index is in it.
 
-    if len(levels) == 0:
-        return []
+    Parameters
+    ----------
+    left_indices : list of indices
 
-    first_indices = handle._get_level_column(
-        level_key=levels[0], column_key=index
-    )
-    inter = first_indices
-    for ll in range(1, len(levels)):
-        level_key = levels[ll]
-        next_indices = handle._get_level_column(
-            level_key=level_key, column_key=index
-        )
-        inter = np.intersect1d(inter, next_indices)
-    return inter
+    right_indices : list of indices
+
+    Example
+    -------
+    [0, 1, 0, 0] = make_mask_of_right_in_left([1,2,3,4], [0,2,9])
+    """
+    left_df = pd.DataFrame({"i": left_indices})
+    right_df = pd.DataFrame({"i": right_indices})
+    mask_df = pd.merge(left_df, right_df, on="i", how="left", indicator=True)
+    indicator_df = mask_df["_merge"]
+    mask = np.array(indicator_df == "both", dtype=bool)
+    return mask
 
 
-def _sub_dtypes(dtypes, levels_and_columns=None):
+def _sub_table_dtypes(table_dtypes, levels_and_columns=None):
     if levels_and_columns is None:
-        return dtypes
-    out = {}
-    for lk in levels_and_columns:
-        out[lk] = []
+        return table_dtypes
 
-        if isinstance(levels_and_columns[lk], str):
-            if levels_and_columns[lk] == "__all__":
-                out[lk] = dtypes[lk]
-            else:
-                raise KeyError(
-                    "Expected column command to be in ['__all__']."
-                    f"But it is '{levels_and_columns[lk]:s}'."
-                )
+    sub_table_dtype = {}
+    for level_key in levels_and_columns:
+        sub_table_dtype[level_key] = _sub_level_dtypes(
+            level_dtype=table_dtypes[level_key],
+            column_keys=levels_and_columns[level_key],
+        )
+    return sub_table_dtype
+
+
+def _sub_level_dtypes(level_dtype, column_keys=None):
+    if column_keys is None:
+        return level_dtype
+    sub_dtype = []
+
+    if isinstance(column_keys, str):
+        if column_keys == "__all__":
+            sub_dtype = level_dtype
         else:
-            for ck in levels_and_columns[lk]:
-                dt = None
-                for item in dtypes[lk]:
-                    if item[0] == ck:
-                        dt = (ck, item[1])
-                assert dt is not None
-                out[lk].append(dt)
+            raise KeyError(
+                "Expected column command to be in ['__all__']."
+                f"But it is '{column_keys:s}'."
+            )
+    else:
+        for column_key in column_keys:
+            dt = None
+            for _column_key, _column_dtype in level_dtype:
+                if _column_key == column_key:
+                    dt = (_column_key, _column_dtype)
+            assert dt is not None
+            sub_dtype.append(dt)
 
-    return out
+    return sub_dtype
 
 
 def _query(
     handle,
-    index=None,
     indices=None,
     levels_and_columns=None,
     align_indices=False,
@@ -64,36 +77,28 @@ def _query(
     Query levels and columns on either a SparseNumericTable or on
     archive.Reader.
     """
-    sub_dtypes = _sub_dtypes(
-        dtypes=handle.dtypes, levels_and_columns=levels_and_columns
-    )
+    if levels_and_columns is None:
+        levels_and_columns = {}
+        for level_key in handle.list_level_keys():
+            levels_and_columns[level_key] = handle.list_column_keys(
+                level_key=level_key
+            )
 
     out = SparseNumericTable(index_key=copy.copy(handle._index_key))
-    for lk in sub_dtypes:
-        if index is not None and indices is not None:
-            mask = logic.make_mask_of_right_in_left(
-                left_indices=handle._get_level_column(lk, index),
-                right_indices=indices,
-            )
-        else:
-            mask = np.ones(handle._get_len_level(lk), dtype=bool)
 
-        level_shape = np.sum(mask)
-
-        out[lk] = DynamicSizeRecarray(
-            dtype=sub_dtypes[lk],
-            shape=level_shape,
+    for level_key in levels_and_columns:
+        out[level_key] = handle._get_level(
+            level_key=level_key,
+            column_keys=levels_and_columns[level_key],
+            indices=indices,
         )
 
-        for ck, cdtype in sub_dtypes[lk]:
-            out[lk][ck] = handle._get_level_column(lk, ck)[mask]
-
     if align_indices:
-        assert index is not None and indices is not None
+        assert indices is not None
         out._table = logic.sort_table_on_common_indices(
             table=out._table,
             common_indices=indices,
-            index_key=index,
+            index_key=self.index_key,
         )
 
     out.shrink_to_fit()

@@ -98,13 +98,30 @@ class SparseNumericTable:
         return list(self.keys())
 
     def list_column_keys(self, level_key):
-        return list(self._table[level_key].keys())
+        return list(self._table[level_key].dtype.names)
 
-    def _get_level_column(self, level_key, column_key):
-        return self._table[level_key][column_key]
+    def _get_level(self, level_key, column_keys, indices=None):
+        out_dtype = _base._sub_level_dtypes(
+            level_dtype=self.dtypes[level_key],
+            column_keys=column_keys,
+        )
 
-    def _get_len_level(self, level_key):
-        return len(self._table[level_key])
+        level_indices = self[level_key][self.index_key]
+        if indices is not None:
+            level_mask = _base.make_mask_of_right_in_left(
+                left_indices=level_indices,
+                right_indices=indices,
+            )
+        else:
+            level_mask = np.ones(
+                shape=level_indices.shape[0],
+                dtype=bool,
+            )
+
+        out = DynamicSizeRecarray(shape=sum(level_mask), dtype=out_dtype)
+        for column_key, _ in out_dtype:
+            out[column_key] = self[level_key][column_key][level_mask]
+        return out
 
     def shrink_to_fit(self):
         for lk in self._table:
@@ -152,19 +169,14 @@ class SparseNumericTable:
         out.seek(0)
         return out.read()
 
-    def intersection(self, index, levels=None):
-        return _base._intersection(handle=self, index=index, levels=levels)
-
     def query(
         self,
-        index=None,
         indices=None,
         levels_and_columns=None,
         align_indices=False,
     ):
         return _base._query(
             handle=self,
-            index=index,
             indices=indices,
             levels_and_columns=levels_and_columns,
             align_indices=align_indices,

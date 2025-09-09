@@ -185,22 +185,21 @@ def cut_level_on_indices(level, indices, index_key, column_keys=None):
     column_keys : list of strings (None)
         When specified, only these columns will be in the output-level.
     """
-    if column_keys is None:
-        column_keys = list(level.dtype.names)
-    column_keys.append(index_key)
-    _part = {}
-    for column_key in column_keys:
-        _part[column_key] = level[column_key]
-    part_df = pd.DataFrame(_part)
-    del _part
-    common_df = pd.merge(
-        part_df,
-        pd.DataFrame({index_key: indices}),
-        on=index_key,
-        how="inner",
+    level_mask = make_mask_of_right_in_left(
+        left_indices=level[index_key],
+        right_indices=indices,
     )
-    del part_df
-    return DynamicSizeRecarray(recarray=common_df.to_records(index=False))
+    out_dtype = _base._sub_level_dtypes(
+        level_dtype=_base._get_simple_dtype_from_recarray(level),
+        column_keys=column_keys,
+    )
+    out = DynamicSizeRecarray(
+        shape=sum(level_mask),
+        dtype=out_dtype,
+    )
+    for column_key, _ in out_dtype:
+        out[column_key] = level[column_key][level_mask]
+    return out
 
 
 def cut_table_on_indices(

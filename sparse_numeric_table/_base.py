@@ -67,6 +67,13 @@ def _sub_level_dtypes(level_dtype, column_keys=None):
     return sub_dtype
 
 
+def _get_simple_dtype_from_recarray(recarray):
+    out = []
+    for column_key in recarray.dtype.names:
+        out.append((column_key, recarray.dtype[column_key].str))
+    return out
+
+
 def _query(
     handle,
     indices=None,

@@ -156,20 +156,6 @@ def _is_int_uint_like_dtype(dtype):
         return False
 
 
-def _use_index_key_of_table_if_None(table, index_key):
-    if index_key is None:
-        return table.index_key
-    else:
-        return index_key
-
-
-def _use_level_keys_of_table_if_None(table, level_keys):
-    if level_keys is None:
-        return list(table.keys())
-    else:
-        return level_keys
-
-
 def _cut_level_on_indices(level, indices, index_key, column_keys=None):
     """
     Returns a level (recarray) only containing the row-indices in 'indices'.
@@ -185,7 +171,7 @@ def _cut_level_on_indices(level, indices, index_key, column_keys=None):
     column_keys : list of strings (None)
         When specified, only these columns will be in the output-level.
     """
-    level_mask = make_mask_of_right_in_left(
+    mask = make_mask_of_right_in_left(
         left_indices=level[index_key],
         right_indices=indices,
     )
@@ -193,18 +179,13 @@ def _cut_level_on_indices(level, indices, index_key, column_keys=None):
         level_dtype=_base._get_simple_dtype_from_recarray(level),
         column_keys=column_keys,
     )
-    out = DynamicSizeRecarray(
-        shape=sum(level_mask),
-        dtype=out_dtype,
-    )
-    for column_key, _ in out_dtype:
-        out[column_key] = level[column_key][level_mask]
+    out = DynamicSizeRecarray(shape=sum(mask), dtype=out_dtype)
+    for ck, _ in out_dtype:
+        out[ck] = level[ck][mask]
     return out
 
 
-def cut_table_on_indices(
-    table, common_indices, level_keys=None, index_key=None
-):
+def cut_table_on_indices(table, common_indices):
     """
     Returns table but only with the rows listed in common_indices.
 
@@ -215,26 +196,20 @@ def cut_table_on_indices(
     common_indices : list of indices
         The row-indices to cut on. Only row-indices in this list will go in the
         output-table.
-    level_keys : list of strings (None)
-        When provided, the output-table will only contain these levels.
-    index_key : str (None)
-        Key of the index column.
     """
     common_indices = np.asarray(common_indices)
-    index_key = _use_index_key_of_table_if_None(table, index_key)
-    level_keys = _use_level_keys_of_table_if_None(table, level_keys)
 
-    out = SparseNumericTable(index_key=index_key)
-    for level_key in level_keys:
-        out[level_key] = _cut_level_on_indices(
-            level=table[level_key],
+    out = SparseNumericTable(index_key=table.index_key)
+    for lk in table:
+        out[lk] = _cut_level_on_indices(
+            level=table[lk],
             indices=common_indices,
-            index_key=index_key,
+            index_key=table.index_key,
         )
     return out
 
 
-def sort_table_on_common_indices(table, common_indices, index_key=None):
+def sort_table_on_common_indices(table, common_indices):
     """
     Returns a table with all row-indices ordered same as common_indices.
 
@@ -244,34 +219,26 @@ def sort_table_on_common_indices(table, common_indices, index_key=None):
         The sparse numeric table, but must be rectangular, i.e. not sparse.
     common_indices : list of indices
         The row-indices to sort by.
-    index_key : str (None)
-        Key of the index column.
     """
     common_indices = np.asarray(common_indices)
-    index_key = _use_index_key_of_table_if_None(table, index_key)
 
     common_order_args = np.argsort(common_indices)
-    common_inv_order = np.zeros(shape=common_indices.shape, dtype=np.int64)
+    common_inv_order = np.zeros(shape=common_indices.shape, dtype=int)
     common_inv_order[common_order_args] = np.arange(len(common_indices))
     del common_order_args
 
-    out = SparseNumericTable(index_key=index_key)
-    for level_key in table:
-        level = table[level_key]
-        level_order_args = np.argsort(level[index_key])
+    out = SparseNumericTable(index_key=table.index_key)
+    for lk in table:
+        level = table[lk]
+        level_order_args = np.argsort(level[table.index_key])
         level_sorted = level[level_order_args]
         del level_order_args
         level_same_order_as_common = level_sorted[common_inv_order]
-        out[level_key] = level_same_order_as_common
+        out[lk] = level_same_order_as_common
     return out
 
 
-def cut_and_sort_table_on_indices(
-    table,
-    common_indices,
-    level_keys=None,
-    index_key=None,
-):
+def cut_and_sort_table_on_indices(table, common_indices):
     """
     Returns a table (rectangular, not sparse) containing only rows listed in
     common_indices and in this order.
@@ -282,29 +249,21 @@ def cut_and_sort_table_on_indices(
         The sparse numeric table.
     common_indices : list of indices
         The row-indices to cut on and sort by.
-    level_keys : list of strings (None)
-        When specified, only this levels will be in the output-table.
-    index_key : str (None)
-        Key of the index column.
     """
     common_indices = np.asarray(common_indices)
-    index_key = _use_index_key_of_table_if_None(table, index_key)
 
     out = cut_table_on_indices(
         table=table,
         common_indices=common_indices,
-        index_key=index_key,
-        level_keys=level_keys,
     )
     out = sort_table_on_common_indices(
         table=out,
         common_indices=common_indices,
-        index_key=index_key,
     )
     return out
 
 
-def make_rectangular_DataFrame(table, delimiter="/", index_key=None):
+def make_rectangular_DataFrame(table, delimiter="/"):
     """
     Returns a pandas.DataFrame made from a table.
     The table must already be rectangular, i.e. not sparse anymore.
@@ -316,23 +275,17 @@ def make_rectangular_DataFrame(table, delimiter="/", index_key=None):
         The sparse numeric table.
     delimiter : str
         To join a level key with a column key.
-    index_key : str (None)
-        Key of the index column.
     """
-    index_key = _use_index_key_of_table_if_None(table, index_key)
+    ik = table.index_key
 
     out = {}
-    for level_key in table:
-        for column_key in table[level_key].dtype.names:
-            if column_key == index_key:
-                if index_key in out:
-                    np.testing.assert_array_equal(
-                        out[index_key], table[level_key][index_key]
-                    )
+    for lk in table:
+        for ck in table[lk].dtype.names:
+            if ck == ik:
+                if ik in out:
+                    np.testing.assert_array_equal(out[ik], table[lk][ik])
                 else:
-                    out[index_key] = table[level_key][index_key]
+                    out[ik] = table[lk][ik]
             else:
-                out[f"{level_key:s}{delimiter:s}{column_key:s}"] = table[
-                    level_key
-                ][column_key]
+                out[f"{lk:s}{delimiter:s}{ck:s}"] = table[lk][ck]
     return pd.DataFrame(out)

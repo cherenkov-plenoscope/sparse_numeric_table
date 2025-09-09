@@ -133,7 +133,6 @@ def test_merge_common():
 
     my_common_df = snt.logic.make_rectangular_DataFrame(
         table=my_sorted_common_table,
-        index_key="i",
     )
 
     np.testing.assert_array_equal(
@@ -168,15 +167,18 @@ def test_merge_across_all_levels_random_order_indices():
     np.random.shuffle(cut_indices)
 
     cut_table = snt.logic.cut_table_on_indices(
-        table=my_table,
+        table=my_table.query(
+            levels_and_columns={
+                "elementary_school": "__all__",
+                "high_school": "__all__",
+                "university": "__all__",
+            }
+        ),
         common_indices=cut_indices,
-        index_key="i",
-        level_keys=["elementary_school", "high_school", "university"],
     )
     sorted_cut_table = snt.logic.sort_table_on_common_indices(
         table=cut_table,
         common_indices=cut_indices,
-        index_key="i",
     )
 
     np.testing.assert_array_equal(
@@ -216,15 +218,17 @@ def test_merge_random_order_indices():
     np.random.shuffle(cut_indices)
 
     cut_table = snt.logic.cut_table_on_indices(
-        table=my_table,
+        table=my_table.query(
+            levels_and_columns={
+                "elementary_school": "__all__",
+                "high_school": "__all__",
+            }
+        ),
         common_indices=cut_indices,
-        level_keys=["elementary_school", "high_school"],
-        index_key="uid",
     )
     sorted_cut_table = snt.logic.sort_table_on_common_indices(
         table=cut_table,
         common_indices=cut_indices,
-        index_key="uid",
     )
 
     assert "university" not in sorted_cut_table

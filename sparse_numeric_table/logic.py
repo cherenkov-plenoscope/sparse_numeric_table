@@ -170,30 +170,6 @@ def _use_level_keys_of_table_if_None(table, level_keys):
         return level_keys
 
 
-def cut_on_common_indices(table, level_keys=None, index_key=None):
-    """
-    Parameters
-    ----------
-    table : dict of recarrays, or SparseNumericTable.
-        The sparse numeric table.
-    level_keys : list of strings (None)
-        Cut on these levels.
-    index_key : str (None)
-        Key of the index column.
-    """
-    index_key = _use_index_key_of_table_if_None(table, index_key)
-    level_keys = _use_level_keys_of_table_if_None(table, level_keys)
-
-    list_of_lists_of_indices = []
-    for level_key in level_keys:
-        list_of_lists_of_indices.append(table[level_key][index_key])
-    common_indices = intersection(list_of_lists_of_indices)
-
-    return cut_and_sort_table_on_indices(
-        table=table, common_indices=common_indices, level_keys=level_keys
-    )
-
-
 def cut_level_on_indices(level, indices, index_key, column_keys=None):
     """
     Returns a level (recarray) only containing the row-indices in 'indices'.

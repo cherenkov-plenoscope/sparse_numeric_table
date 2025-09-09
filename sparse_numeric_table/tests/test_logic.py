@@ -78,7 +78,6 @@ def test_difference_empty():
     assert w.dtype == int
 
 
-"""
 def test_intersection_unique():
     with pytest.raises(AssertionError):
         _ = snt.logic.intersection([1, 1])
@@ -101,7 +100,12 @@ def test_difference_unique():
 
     with pytest.raises(AssertionError):
         _ = snt.logic.difference([1, 2, 3], [1, 1])
-"""
+
+
+def test_union_case0():
+    w = snt.logic.union([1], [2], [1, 2, 3, 4, 5])
+    for i in [1, 2, 3, 4, 5]:
+        assert i in w
 
 
 def test_union_case1():

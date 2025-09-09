@@ -73,8 +73,8 @@ def difference(first, *others):
     -------
     [5] = difference([1,2,3,4,5,6], [2,4,6], [1,2,3])
     """
-    sfirst = _array_to_set(_asarray(first))
-    sothers = _array_to_set(union(*others))
+    sfirst = set(_asarray(first))
+    sothers = set(union(*others))
     diff = sfirst.difference(sothers)
     return np.asarray(list(diff), dtype=int)
 
@@ -107,38 +107,18 @@ def union(*args):
     return out
 
 
-def _array_to_set(a):
-    s = set(a)
-    if len(s) < a.shape[0]:
-        d = {}
-        for i, v in enumerate(a):
-            if v in d:
-                d[v].append(i)
-            else:
-                d[v] = [i]
-        report = ""
-        for v in d:
-            if len(d[v]) > 1:
-                report += (
-                    f"{{value={v:d}, indices=["
-                    + str.join(",", [f"{i:d}" for i in d[v]])
-                    + "]}, "
-                )
-        msg = (
-            "Expected int/uint values in array to be unique. "
-            f"But these values are not: {report:s}."
-        )
-        raise AssertionError(msg)
-    return s
-
-
 def _asarray(x):
     a = np.asarray(x)
     is_empty_anyhow = a.shape[0] == 0
     if not _is_int_uint_like_dtype(a.dtype) and not is_empty_anyhow:
         msg = f"Expected int/uint like dtype but got '{a.dtype.name:s}'."
         raise AssertionError(msg)
-    return np.asarray(x, int)
+    out = np.asarray(x, int)
+
+    is_unique = out.shape[0] == np.unique(out).shape[0]
+    if not is_unique:
+        raise AssertionError("Expected values to be unique")
+    return out
 
 
 def _is_int_uint_like_dtype(dtype):
@@ -179,7 +159,7 @@ def _cut_level_on_indices(level, indices, index_key, column_keys=None):
     return out
 
 
-def cut_table_on_indices(table, common_indices):
+def cut_table_on_indices(table, common_indices, inplace=False):
     """
     Returns table but only with the rows listed in common_indices.
 
@@ -190,10 +170,16 @@ def cut_table_on_indices(table, common_indices):
     common_indices : list of indices
         The row-indices to cut on. Only row-indices in this list will go in the
         output-table.
+    inplace : bool
+        Returns modified table if True.
     """
     common_indices = np.asarray(common_indices)
 
-    out = SparseNumericTable(index_key=table.index_key)
+    if inplace:
+        out = table
+    else:
+        out = SparseNumericTable(index_key=table.index_key)
+
     for lk in table:
         out[lk] = _cut_level_on_indices(
             level=table[lk],
@@ -203,7 +189,7 @@ def cut_table_on_indices(table, common_indices):
     return out
 
 
-def sort_table_on_common_indices(table, common_indices):
+def sort_table_on_common_indices(table, common_indices, inplace=False):
     """
     Returns a table with all row-indices ordered same as common_indices.
 
@@ -213,6 +199,8 @@ def sort_table_on_common_indices(table, common_indices):
         The sparse numeric table, but must be rectangular, i.e. not sparse.
     common_indices : list of indices
         The row-indices to sort by.
+    inplace : bool
+        Returns modified table if True.
     """
     common_indices = np.asarray(common_indices)
 
@@ -221,7 +209,11 @@ def sort_table_on_common_indices(table, common_indices):
     inv_order[order] = np.arange(len(common_indices))
     del order
 
-    out = SparseNumericTable(index_key=table.index_key)
+    if inplace:
+        out = table
+    else:
+        out = SparseNumericTable(index_key=table.index_key)
+
     for lk in table:
         level = table[lk]
         level_order_args = np.argsort(level[table.index_key])
@@ -232,7 +224,7 @@ def sort_table_on_common_indices(table, common_indices):
     return out
 
 
-def cut_and_sort_table_on_indices(table, common_indices):
+def cut_and_sort_table_on_indices(table, common_indices, inplace=False):
     """
     Returns a table (rectangular, not sparse) containing only rows listed in
     common_indices and in this order.
@@ -243,16 +235,20 @@ def cut_and_sort_table_on_indices(table, common_indices):
         The sparse numeric table.
     common_indices : list of indices
         The row-indices to cut on and sort by.
+    inplace : bool
+        Returns modified table if True.
     """
     common_indices = np.asarray(common_indices)
 
     out = cut_table_on_indices(
         table=table,
         common_indices=common_indices,
+        inplace=inplace,
     )
     out = sort_table_on_common_indices(
         table=out,
         common_indices=common_indices,
+        inplace=inplace,
     )
     return out
 

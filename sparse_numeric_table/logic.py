@@ -43,16 +43,14 @@ def intersection(*args):
     [4, 5, 6] = intersection([1,2,3,4,5,6], [3,4,5,6,7,8], [4,5,6,7,8,9,10])
 
     """
-    arrs = [_asarray(item) for item in args]
-
-    num = len(arrs)
+    num = len(args)
 
     if num == 0:
         return np.array([], dtype=int)
     else:
-        out = _array_to_set(arrs[0])
+        out = _array_to_set(_asarray(args[0]))
         for i in range(1, num):
-            out = out.intersection(_array_to_set(arrs[i]))
+            out = out.intersection(_array_to_set(_asarray(args[i])))
         return np.asarray(list(out), dtype=int)
 
 
@@ -104,15 +102,13 @@ def union(*args):
 
 
 def _union_as_set(*args):
-    arrs = [_asarray(item) for item in args]
-
-    num = len(arrs)
+    num = len(args)
     if num == 0:
         return set()
     else:
-        out = _array_to_set(arrs[0])
+        out = _array_to_set(_asarray(args[0]))
         for i in range(1, num):
-            s = _array_to_set(arrs[i])
+            s = _array_to_set(_asarray(args[i]))
             out = set.union(out, s)
     return out
 

@@ -48,10 +48,10 @@ def intersection(*args):
     if num == 0:
         return np.array([], dtype=int)
     else:
-        out = _array_to_set(_asarray(args[0]))
+        out = _asarray(args[0])
         for i in range(1, num):
-            out = out.intersection(_array_to_set(_asarray(args[i])))
-        return np.asarray(list(out), dtype=int)
+            out = np.intersect1d(out, _asarray(args[i]))
+        return out
 
 
 def difference(first, *others):
@@ -73,9 +73,8 @@ def difference(first, *others):
     -------
     [5] = difference([1,2,3,4,5,6], [2,4,6], [1,2,3])
     """
-    afirst = _asarray(first)
-    sfirst = _array_to_set(afirst)
-    sothers = _union_as_set(*others)
+    sfirst = _array_to_set(_asarray(first))
+    sothers = _array_to_set(union(*others))
     diff = sfirst.difference(sothers)
     return np.asarray(list(diff), dtype=int)
 
@@ -97,19 +96,14 @@ def union(*args):
     -------
     [1,2,3,4,5] = union([[1], [2], [3,4,5], [])
     """
-    out = _union_as_set(*args)
-    return np.asarray(list(out), dtype=int)
-
-
-def _union_as_set(*args):
     num = len(args)
+
     if num == 0:
-        return set()
+        return np.array([], dtype=int)
     else:
-        out = _array_to_set(_asarray(args[0]))
+        out = _asarray(args[0])
         for i in range(1, num):
-            s = _array_to_set(_asarray(args[i]))
-            out = set.union(out, s)
+            out = np.union1d(out, _asarray(args[i]))
     return out
 
 

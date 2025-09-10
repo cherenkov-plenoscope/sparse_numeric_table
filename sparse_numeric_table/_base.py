@@ -102,8 +102,8 @@ def _query(
 
     if sort:
         assert indices is not None
-        out._table = logic.sort_table_on_common_indices(
-            table=out._table,
+        out = logic.sort_table_on_common_indices(
+            table=out,
             common_indices=indices,
             inplace=True,
         )

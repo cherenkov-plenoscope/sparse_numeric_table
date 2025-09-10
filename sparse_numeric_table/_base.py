@@ -78,7 +78,7 @@ def _query(
     handle,
     indices=None,
     levels_and_columns=None,
-    align_indices=False,
+    sort=False,
 ):
     """
     Query levels and columns on either a SparseNumericTable or on
@@ -100,12 +100,12 @@ def _query(
             indices=indices,
         )
 
-    if align_indices:
+    if sort:
         assert indices is not None
         out._table = logic.sort_table_on_common_indices(
             table=out._table,
             common_indices=indices,
-            index_key=self.index_key,
+            inplace=True,
         )
 
     out.shrink_to_fit()

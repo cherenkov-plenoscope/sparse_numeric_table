@@ -173,13 +173,13 @@ class SparseNumericTable:
         self,
         indices=None,
         levels_and_columns=None,
-        align_indices=False,
+        sort=False,
     ):
         return _base._query(
             handle=self,
             indices=indices,
             levels_and_columns=levels_and_columns,
-            align_indices=align_indices,
+            sort=sort,
         )
 
 

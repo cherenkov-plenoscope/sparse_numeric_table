@@ -79,3 +79,4 @@ from ._sparse_numeric_table import SparseNumericTable
 from . import logic
 from . import validating
 from . import testing
+from . import files

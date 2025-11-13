@@ -276,15 +276,7 @@ class SparseNumericTableReader:
                 column_key=self.index_key,
                 block_key=block_key,
             )
-            level_block = np.recarray(
-                shape=level_block_indices.shape[0], dtype=out_dtype
-            )
-            for column_key, _ in out_dtype:
-                level_block[column_key] = self._read_level_column_block(
-                    level_key=level_key,
-                    column_key=column_key,
-                    block_key=block_key,
-                )
+
             if indices is not None:
                 level_block_mask = logic.make_mask_of_right_in_left(
                     left_indices=level_block_indices,
@@ -295,8 +287,19 @@ class SparseNumericTableReader:
                     shape=level_block_indices.shape[0],
                     dtype=bool,
                 )
-            level_block_part = level_block[level_block_mask]
-            out.append(level_block_part)
+
+            if np.any(level_block_mask):
+                level_block = np.recarray(
+                    shape=level_block_indices.shape[0], dtype=out_dtype
+                )
+                for column_key, _ in out_dtype:
+                    level_block[column_key] = self._read_level_column_block(
+                        level_key=level_key,
+                        column_key=column_key,
+                        block_key=block_key,
+                    )
+                level_block_part = level_block[level_block_mask]
+                out.append(level_block_part)
 
         out.shrink_to_fit()
         return out

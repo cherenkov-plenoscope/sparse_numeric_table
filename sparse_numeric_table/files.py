@@ -41,7 +41,6 @@ def merge(
                     for level_indices_block in _split_into_chunks(
                         x=level_indices_all, chunk_size=block_read_size
                     ):
-                        print(in_path, level_key)
                         out_table.append_table(
                             in_table.query(
                                 levels_and_columns={level_key: "__all__"},

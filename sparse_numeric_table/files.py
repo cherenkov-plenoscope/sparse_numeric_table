@@ -9,25 +9,45 @@ def merge(
     sort_in_tables=False,
     block_read_size=262_144,
     open_file_function=None,
+    logger=None,
 ):
+    lg = logger
     if open_file_function is None:
         open_file_function = open
     assert len(in_paths) > 0
 
+    _info(lg, "merge start")
     with _file_io.open(file=in_paths[0], mode="r") as first:
         dtypes = first.dtypes
         index_key = first.index_key
+    _info(lg, "  got 'dtypes' and 'index_key' from 'in_paths[0]'.")
+
+    level_keys = [level_key for level_key in dtypes]
 
     with _file_io.open(
         file=out_path, mode="w", dtypes=dtypes, index_key=index_key
     ) as out_table:
-        for in_path in in_paths:
+        for iii in range(len(in_paths)):
+            in_path = in_paths[iii]
+            _info(
+                lg, f"  in_path ({iii+1:d} of {len(in_paths):d}) '{in_path:s}'"
+            )
+
             with open_file_function(in_path, mode="rb") as fin, _file_io.open(
                 file=fin, mode="r"
             ) as in_table:
 
                 # read level by level
-                for level_key in dtypes:
+                for lll in range(len(level_keys)):
+                    level_key = level_keys[lll]
+                    _info(
+                        lg,
+                        (
+                            f"    level "
+                            f"({lll+1:d} of {len(level_keys):d}) "
+                            f"'{level_key:s}'"
+                        ),
+                    )
                     _index_table = in_table.query(
                         levels_and_columns={level_key: [index_key]},
                     )
@@ -38,9 +58,18 @@ def merge(
                     # read in chunks of index
                     # this is potentially slow as it reads the level again and
                     # again but it avoids running out of memory
-                    for level_indices_block in _split_into_chunks(
+                    level_indices_blocks = _split_into_chunks(
                         x=level_indices_all, chunk_size=block_read_size
-                    ):
+                    )
+                    for bbb in range(len(level_indices_blocks)):
+                        level_indices_block = level_indices_blocks[bbb]
+                        _info(
+                            lg,
+                            (
+                                f"      block "
+                                f"({bbb+1:d} of {len(level_indices_blocks):d})"
+                            ),
+                        )
                         out_table.append_table(
                             in_table.query(
                                 levels_and_columns={level_key: "__all__"},
@@ -48,6 +77,12 @@ def merge(
                                 sort=sort_in_tables,
                             )
                         )
+    _info(logger, "merge complete")
+
+
+def _info(logger, msg):
+    if logger is not None:
+        logger.info(msg)
 
 
 def sort(in_path, out_path):

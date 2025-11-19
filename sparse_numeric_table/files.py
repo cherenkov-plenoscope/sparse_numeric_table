@@ -7,6 +7,7 @@ def merge(
     out_path,
     in_paths,
     sort_in_tables=False,
+    compress=True,
     block_read_size=262_144,
     open_file_function=None,
     logger=None,
@@ -25,7 +26,7 @@ def merge(
     level_keys = [level_key for level_key in dtypes]
 
     with _file_io.open(
-        file=out_path, mode="w", dtypes=dtypes, index_key=index_key
+        file=out_path, mode="w", dtypes=dtypes, index_key=index_key, compress=compress,
     ) as out_table:
         for iii in range(len(in_paths)):
             in_path = in_paths[iii]

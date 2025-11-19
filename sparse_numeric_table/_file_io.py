@@ -15,7 +15,7 @@ def open(
     dtypes_and_index_key_from=None,
     dtypes=None,
     index_key=None,
-    compress=False,
+    compress=True,
     block_size=262_144,
 ):
     """

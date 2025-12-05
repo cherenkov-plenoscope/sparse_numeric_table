@@ -405,3 +405,63 @@ def _get_dtypes_and_index_key(dtypes, index_key, dtypes_and_index_key_from):
             dtypes_and_index_key_from.dtypes,
             dtypes_and_index_key_from.index_key,
         )
+
+
+class LevelBlockLooper:
+    """
+    Read and return the internal 'blocks' of the sparse_numeric_table's
+    internal storage block structure. This will read and loop over all the
+    'blocks' from a specific 'level' with name 'level_key'.
+    """
+
+    def __init__(self, reader, level_key):
+        """
+        Parameters
+        ----------
+        reader : sparse_numeric_table.SparseNumericTableReader
+            Reader for tables.
+        level_key : str
+            Name of the level to be read and looped over.
+        """
+        self.reader = reader
+        self.level_key = level_key
+        assert (
+            level_key in self.reader.dtypes
+        ), "Expected level '{level_key:s}' to be in reader's table."
+        self.block_keys = list(
+            self.reader.info[level_key][self.reader.index_key].keys()
+        )
+        self._i_block = 0
+
+    def __next__(self):
+        if self._i_block == len(self.block_keys):
+            raise StopIteration
+
+        index_column = self.reader._read_level_column_block(
+            level_key=self.level_key,
+            column_key=self.reader.index_key,
+            block_key=self.block_keys[self._i_block],
+        )
+        out = np.recarray(
+            shape=index_column.shape[0],
+            dtype=self.reader.dtypes[self.level_key],
+        )
+
+        for column_dtype in self.reader.dtypes[self.level_key]:
+            column_key, _ = column_dtype
+            column = self.reader._read_level_column_block(
+                level_key=self.level_key,
+                column_key=column_key,
+                block_key=self.block_keys[self._i_block],
+            )
+            out[column_key] = column
+
+        self._i_block += 1
+
+        return out
+
+    def __iter__(self):
+        return self
+
+    def __repr__(self):
+        return f"{self.__class__.__name__:s}()"

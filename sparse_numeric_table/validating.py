@@ -31,7 +31,7 @@ def assert_all_levels_have_index_key(dtypes, index_key):
         if not has_index_key[level_key]:
             assert False, (
                 f"Expected level '{level_key:s}' to "
-                f"have 'index_key': '{self.index_key:s}'."
+                f"have 'index_key': '{index_key:s}'."
             )
 
 

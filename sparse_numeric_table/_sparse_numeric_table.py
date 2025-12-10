@@ -153,7 +153,7 @@ class SparseNumericTable:
         return self.info()
 
     def info(self):
-        _head = f"{self.__class__.__name__:s}(index_key='{self.index_key:s}')"
+        _head = f'{self.__class__.__name__:s}(index_key="{self.index_key:s}")'
 
         out = io.StringIO()
         out.write(_head)
